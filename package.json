@@ -1,0 +1,38 @@
+{
+  "name": "himonacci-landing",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "autoprefixer": "^10.4.20",
+    "chart.js": "^4.4.7",
+    "critters": "^0.0.23",
+    "framer-motion": "^11.15.0",
+    "lucide-react": "^0.468.0",
+    "next": "^15.1.6",
+    "postcss": "^8.5.2",
+    "react": "^19.1.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "crypto",
+    "trading",
+    "himonacci",
+    "landing-page"
+  ],
+  "author": "HiMonacci Team",
+  "license": "MIT",
+  "description": "HiMonacci - Stable Crypto Profits Without the Hype"
+}
