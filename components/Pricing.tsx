@@ -1,7 +1,11 @@
-import { motion } from 'framer-motion'
-import { Check, Star, Zap, Shield } from 'lucide-react'
+import { motion } from "framer-motion";
+import { Check, Star, Zap, Shield } from "lucide-react";
 
-const Pricing = () => {
+interface PricingProps {
+  onCTAClick?: () => void;
+}
+
+const Pricing = ({ onCTAClick }: PricingProps) => {
   const plans = [
     {
       name: "Dashboard Access",
@@ -13,16 +17,13 @@ const Pricing = () => {
         "Signal tracking and history",
         "Performance monitoring",
         "Educational resources",
-        "Community access"
+        "Community access",
       ],
-      limitations: [
-        "No automated trading",
-        "Manual signal following only"
-      ],
+      limitations: ["No automated trading", "Manual signal following only"],
       minCapital: "Any amount",
       buttonText: "Start Dashboard",
       buttonStyle: "glass border border-gray-600 hover:border-secondary-500",
-      popular: false
+      popular: false,
     },
     {
       name: "Auto-Trading Package",
@@ -36,18 +37,15 @@ const Pricing = () => {
         "Priority support",
         "Advanced analytics",
         "Risk management tools",
-        "Monthly performance reports"
+        "Monthly performance reports",
       ],
-      limitations: [
-        "Monthly commitment required",
-        "Cannot stop mid-month"
-      ],
+      limitations: ["Monthly commitment required", "Cannot stop mid-month"],
       minCapital: "$3,000 USDT minimum",
       buttonText: "Start Auto-Trading",
       buttonStyle: "btn-primary",
-      popular: true
-    }
-  ]
+      popular: true,
+    },
+  ];
 
   return (
     <section id="pricing" className="py-20 relative overflow-hidden">
@@ -70,8 +68,9 @@ const Pricing = () => {
             Simple <span className="gradient-text">Pricing</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Choose the plan that fits your trading goals. Both plans include our core technology, 
-            with the Auto-Trading package providing full automation.
+            Choose the plan that fits your trading goals. Both plans include our
+            core technology, with the Auto-Trading package providing full
+            automation.
           </p>
         </motion.div>
 
@@ -84,8 +83,8 @@ const Pricing = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: index * 0.2 }}
               viewport={{ once: true }}
-              className={`relative glass rounded-2xl p-8 hover-lift ${
-                plan.popular ? 'border-2 border-secondary-500' : ''
+              className={`relative glass rounded-2xl p-8 hover-lift flex flex-col justify-between ${
+                plan.popular ? "border-2 border-secondary-500" : ""
               }`}
             >
               {plan.popular && (
@@ -97,55 +96,75 @@ const Pricing = () => {
                 </div>
               )}
 
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
-                <p className="text-gray-400 mb-4">{plan.description}</p>
-                <div className="mb-4">
-                  <span className="text-4xl font-bold text-white">{plan.price}</span>
-                  <span className="text-gray-400 ml-2">{plan.period}</span>
-                </div>
-                <div className="text-sm text-gray-400">
-                  Minimum Capital: <span className="text-white font-semibold">{plan.minCapital}</span>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-8">
-                <div>
-                  <h4 className="text-white font-semibold mb-3 flex items-center">
-                    <Check className="w-5 h-5 text-success-500 mr-2" />
-                    Included Features
-                  </h4>
-                  <ul className="space-y-2">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-start space-x-3">
-                        <Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-300 text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+              <div>
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    {plan.name}
+                  </h3>
+                  <p className="text-gray-400 mb-4">{plan.description}</p>
+                  <div className="mb-4">
+                    <span className="text-4xl font-bold text-white">
+                      {plan.price}
+                    </span>
+                    <span className="text-gray-400 ml-2">{plan.period}</span>
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    Minimum Capital:{" "}
+                    <span className="text-white font-semibold">
+                      {plan.minCapital}
+                    </span>
+                  </div>
                 </div>
 
-                {plan.limitations.length > 0 && (
+                <div className="space-y-4 mb-8">
                   <div>
                     <h4 className="text-white font-semibold mb-3 flex items-center">
-                      <Shield className="w-5 h-5 text-accent-500 mr-2" />
-                      Important Notes
+                      <Check className="w-5 h-5 text-success-500 mr-2" />
+                      Included Features
                     </h4>
                     <ul className="space-y-2">
-                      {plan.limitations.map((limitation, limitIndex) => (
-                        <li key={limitIndex} className="flex items-start space-x-3">
-                          <div className="w-4 h-4 border border-accent-500 rounded-full mt-0.5 flex-shrink-0"></div>
-                          <span className="text-gray-400 text-sm">{limitation}</span>
+                      {plan.features.map((feature, featureIndex) => (
+                        <li
+                          key={featureIndex}
+                          className="flex items-start space-x-3"
+                        >
+                          <Check className="w-4 h-4 text-success-500 mt-0.5 flex-shrink-0" />
+                          <span className="text-gray-300 text-sm">
+                            {feature}
+                          </span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                )}
+
+                  {plan.limitations.length > 0 && (
+                    <div>
+                      <h4 className="text-white font-semibold mb-3 flex items-center">
+                        <Shield className="w-5 h-5 text-accent-500 mr-2" />
+                        Important Notes
+                      </h4>
+                      <ul className="space-y-2">
+                        {plan.limitations.map((limitation, limitIndex) => (
+                          <li
+                            key={limitIndex}
+                            className="flex items-start space-x-3"
+                          >
+                            <div className="w-4 h-4 border border-accent-500 rounded-full mt-0.5 flex-shrink-0"></div>
+                            <span className="text-gray-400 text-sm">
+                              {limitation}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={onCTAClick}
                 className={`w-full py-4 rounded-xl text-white font-semibold text-lg transition-all ${plan.buttonStyle}`}
               >
                 {plan.buttonText}
@@ -176,7 +195,9 @@ const Pricing = () => {
               <div className="w-12 h-12 bg-secondary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Zap className="w-6 h-6 text-secondary-500" />
               </div>
-              <h4 className="font-semibold text-white mb-2">Crypto Payments Only</h4>
+              <h4 className="font-semibold text-white mb-2">
+                Crypto Payments Only
+              </h4>
               <p className="text-gray-400 text-sm">
                 All payments processed in USDT or other major cryptocurrencies
               </p>
@@ -187,7 +208,8 @@ const Pricing = () => {
               </div>
               <h4 className="font-semibold text-white mb-2">No Hidden Fees</h4>
               <p className="text-gray-400 text-sm">
-                Clear pricing structure with no surprise charges or additional costs
+                Clear pricing structure with no surprise charges or additional
+                costs
               </p>
             </div>
             <div className="text-center">
@@ -221,7 +243,9 @@ const Pricing = () => {
 
           <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <h4 className="text-lg font-semibold text-white mb-4">Requirements</h4>
+              <h4 className="text-lg font-semibold text-white mb-4">
+                Requirements
+              </h4>
               <ul className="space-y-3">
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-success-500 mt-0.5" />
@@ -229,15 +253,21 @@ const Pricing = () => {
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-success-500 mt-0.5" />
-                  <span className="text-gray-300">Minimum $3,000 USDT for auto-trading</span>
+                  <span className="text-gray-300">
+                    Minimum $3,000 USDT for auto-trading
+                  </span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-success-500 mt-0.5" />
-                  <span className="text-gray-300">API keys for trading access</span>
+                  <span className="text-gray-300">
+                    API keys for trading access
+                  </span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-success-500 mt-0.5" />
-                  <span className="text-gray-300">Monthly subscription payment</span>
+                  <span className="text-gray-300">
+                    Monthly subscription payment
+                  </span>
                 </li>
               </ul>
             </div>
@@ -245,19 +275,33 @@ const Pricing = () => {
               <h4 className="text-lg font-semibold text-white mb-4">Process</h4>
               <ol className="space-y-3">
                 <li className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-secondary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">1</div>
-                  <span className="text-gray-300">Sign up and choose your plan</span>
+                  <div className="w-6 h-6 bg-secondary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                    1
+                  </div>
+                  <span className="text-gray-300">
+                    Sign up and choose your plan
+                  </span>
                 </li>
                 <li className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-secondary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">2</div>
-                  <span className="text-gray-300">Add your Binance API keys</span>
+                  <div className="w-6 h-6 bg-secondary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                    2
+                  </div>
+                  <span className="text-gray-300">
+                    Add your Binance API keys
+                  </span>
                 </li>
                 <li className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-secondary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">3</div>
-                  <span className="text-gray-300">Deposit funds to your account</span>
+                  <div className="w-6 h-6 bg-secondary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                    3
+                  </div>
+                  <span className="text-gray-300">
+                    Deposit funds to your account
+                  </span>
                 </li>
                 <li className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-secondary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">4</div>
+                  <div className="w-6 h-6 bg-secondary-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                    4
+                  </div>
                   <span className="text-gray-300">Start automated trading</span>
                 </li>
               </ol>
@@ -266,14 +310,15 @@ const Pricing = () => {
 
           <div className="mt-8 p-4 bg-accent-500/10 border border-accent-500/20 rounded-lg">
             <p className="text-accent-400 text-sm text-center">
-              <strong>Important:</strong> Auto-trading cannot be stopped mid-month once started. 
-              All operations are handled monthly for optimal results.
+              <strong>Important:</strong> Auto-trading cannot be stopped
+              mid-month once started. All operations are handled monthly for
+              optimal results.
             </p>
           </div>
         </motion.div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default Pricing
+export default Pricing;

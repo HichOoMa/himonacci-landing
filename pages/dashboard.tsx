@@ -1,24 +1,37 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
-import { TrendingUp, Copy, Check, X, Shield, Clock } from "lucide-react";
-import Hero from "@/components/Hero";
-import ProblemSolution from "@/components/ProblemSolution";
-import HowItWorks from "@/components/HowItWorks";
-import RiskCalculator from "@/components/RiskCalculator";
-import LiveDashboard from "@/components/LiveDashboard";
-import Features from "@/components/Features";
-import Results from "@/components/Results";
-import Pricing from "@/components/Pricing";
-import Security from "@/components/Security";
-import FAQ from "@/components/FAQ";
-import FinalCTA from "@/components/FinalCTA";
-import Navigation from "@/components/Navigation";
-import Footer from "@/components/Footer";
+import {
+  TrendingUp,
+  User,
+  Settings,
+  LogOut,
+  BarChart3,
+  DollarSign,
+  CreditCard,
+  Clock,
+  Shield,
+  Copy,
+  Check,
+  X,
+} from "lucide-react";
 
-export default function Home() {
-  const [isLoaded, setIsLoaded] = useState(false);
+interface UserData {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  isVerified: boolean;
+  subscriptionStatus: "inactive" | "active" | "expired";
+  subscriptionStartDate?: string;
+  subscriptionEndDate?: string;
+  paymentTransactionHash?: string;
+}
+
+export default function Dashboard() {
+  const { user, loading, logout, isAuthenticated } = useAuth();
+  const router = useRouter();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState("");
   const [verifyingPayment, setVerifyingPayment] = useState(false);
@@ -31,25 +44,36 @@ export default function Home() {
     "trc20" | "erc20" | "bep20"
   >("trc20");
   const [transactionId, setTransactionId] = useState("");
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
 
-  const { user, loading } = useAuth();
-  const router = useRouter();
-
+  // Fetch subscription data
   useEffect(() => {
-    setIsLoaded(true);
-  }, []);
+    if (user) {
+      fetchSubscriptionData();
+    }
+  }, [user]);
 
-  // Check if user is authenticated but doesn't have active subscription
-  const isUnsubscribedUser = user && user.subscriptionStatus !== "active";
+  const fetchSubscriptionData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/subscription/status', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-  // USDT payment addresses for different networks
-  const usdtAddresses = {
-    trc20: process.env.NEXT_PUBLIC_USDT_TRC20_ADDRESS || "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
-    erc20: process.env.NEXT_PUBLIC_USDT_ERC20_ADDRESS || "0x742d35Cc6634C0532925a3b8D4012A4F7fB5b32b",
-    bep20: process.env.NEXT_PUBLIC_USDT_BEP20_ADDRESS || "0x742d35Cc6634C0532925a3b8D4012A4F7fB5b32b",
+      if (response.ok) {
+        const data = await response.json();
+        setSubscriptionData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription data:', error);
+    }
   };
 
-  const subscriptionData = {
+  // Legacy subscription data based on user's actual subscription status (keeping for backward compatibility)
+  const legacySubscriptionData = {
+    status: user?.subscriptionStatus || "inactive",
     plan: "Premium",
     monthlyPrice: 99,
     features: [
@@ -59,6 +83,62 @@ export default function Home() {
       "Risk Management Tools",
       "Priority Support",
     ],
+    startDate: user?.subscriptionStartDate,
+    endDate: user?.subscriptionEndDate,
+    transactionHash: user?.paymentTransactionHash,
+    daysRemaining: 0,
+    isInGracePeriod: false,
+    gracePeriodRemaining: 0,
+  };
+
+  // Get current subscription data (use real data if available, fallback to legacy)
+  const currentSubscriptionData = subscriptionData?.hasSubscription ? {
+    status: subscriptionData.subscription.status,
+    plan: subscriptionData.subscription.plan || "Premium",
+    monthlyPrice: subscriptionData.subscription.monthlyPrice || 99,
+    features: [
+      "Advanced Trading Algorithms",
+      "24/7 Automated Trading",
+      "Real-time Market Analysis",
+      "Risk Management Tools",
+      "Priority Support",
+    ],
+    startDate: subscriptionData.subscription.startDate,
+    endDate: subscriptionData.subscription.endDate,
+    transactionHash: subscriptionData.subscription.paymentHistory?.[0]?.transactionHash,
+    daysRemaining: subscriptionData.statusCheck?.daysRemaining || 0,
+    isInGracePeriod: subscriptionData.statusCheck?.gracePeriodRemaining > 0,
+    gracePeriodRemaining: subscriptionData.statusCheck?.gracePeriodRemaining || 0,
+  } : legacySubscriptionData;
+
+  // Cancel subscription function
+  const cancelSubscription = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/subscription/cancel', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        alert('Subscription cancelled successfully');
+        fetchSubscriptionData(); // Refresh subscription data
+      } else {
+        alert('Failed to cancel subscription');
+      }
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      alert('Error cancelling subscription');
+    }
+  };
+
+  // USDT payment addresses for different networks
+  const usdtAddresses = {
+    trc20: process.env.NEXT_PUBLIC_USDT_TRC20_ADDRESS || "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+    erc20: process.env.NEXT_PUBLIC_USDT_ERC20_ADDRESS || "0x742d35Cc6634C0532925a3b8D4012A4F7fB5b32b",
+    bep20: process.env.NEXT_PUBLIC_USDT_BEP20_ADDRESS || "0x742d35Cc6634C0532925a3b8D4012A4F7fB5b32b",
   };
 
   const copyToClipboard = (text: string, type: string) => {
@@ -81,7 +161,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           network: selectedNetwork,
-          expectedAmount: subscriptionData.monthlyPrice,
+          expectedAmount: currentSubscriptionData.monthlyPrice,
           transactionId: transactionId.trim(),
         }),
       });
@@ -91,14 +171,30 @@ export default function Home() {
       if (response.ok && result.success) {
         setPaymentVerificationResult({
           success: true,
-          message: "Payment verified successfully! Redirecting to dashboard...",
+          message:
+            "Payment verified successfully! Your subscription is now active.",
           transaction: result.transaction,
         });
 
-        // Redirect to dashboard after successful payment
+        // Refresh user data to get updated subscription status
+        if (token) {
+          const userResponse = await fetch("/api/auth/me", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            // Refresh subscription data
+            fetchSubscriptionData();
+          }
+        }
+
+        // Close modal after 3 seconds
         setTimeout(() => {
-          router.push("/dashboard");
-        }, 2000);
+          setShowPaymentModal(false);
+        }, 3000);
       } else {
         setPaymentVerificationResult({
           success: false,
@@ -118,76 +214,335 @@ export default function Home() {
     }
   };
 
-  const handleCTAClick = () => {
-    if (user) {
-      // User is authenticated, show payment modal
-      setShowPaymentModal(true);
-    } else {
-      // User is not authenticated, redirect to login
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
       router.push("/login");
+    } else if (
+      !loading &&
+      isAuthenticated &&
+      user &&
+      user.subscriptionStatus === "inactive"
+    ) {
+      // Redirect unsubscribed users to landing page
+      router.push("/");
     }
-  };
+  }, [loading, isAuthenticated, user, router]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-hero-pattern flex items-center justify-center">
+        <div className="loading-dots text-secondary-500 text-xl">Loading</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-hero-pattern">
-      <Navigation />
+      {/* Navigation */}
+      <nav className="bg-primary-950/95 backdrop-blur-md border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-secondary-500 to-accent-500 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold gradient-text">HiMonacci</span>
+            </div>
 
-      {/* Show subscription required banner for authenticated users without subscription */}
-      {/* {isUnsubscribedUser && (
-        <div className="bg-gradient-to-r from-secondary-500 to-accent-500 text-white py-3 px-4 text-center">
-          <p className="text-sm font-medium">
-            Welcome back, {user.firstName}! 
-            <button 
-              onClick={() => setShowPaymentModal(true)}
-              className="ml-2 underline hover:text-gray-200 transition-colors"
-            >
-              Subscribe now to access your dashboard
-            </button>
-          </p>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <User className="w-5 h-5 text-gray-400" />
+                <span className="text-white font-medium">
+                  {user.firstName} {user.lastName}
+                </span>
+              </div>
+              <button
+                onClick={logout}
+                className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
         </div>
-      )} */}
+      </nav>
 
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isLoaded ? 1 : 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative"
-      >
-        {/* Hero Section */}
-        <Hero onCTAClick={handleCTAClick} />
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Welcome back, {user.firstName}!
+            </h1>
+            <p className="text-gray-400">
+              Here's what's happening with your trading account today.
+            </p>
+          </div>{" "}
+          {/* Subscription Status */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="glass rounded-2xl p-6 mb-8"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-accent-500/20 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-accent-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">
+                    {currentSubscriptionData.plan} Plan
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    {currentSubscriptionData.status === "inactive" &&
+                      "Subscription required to access trading features"}
+                    {currentSubscriptionData.status === "active" &&
+                      "Active subscription"}
+                    {currentSubscriptionData.status === "expired" &&
+                      "Subscription expired"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-secondary-500">
+                    ${currentSubscriptionData.monthlyPrice}
+                  </p>
+                  <p className="text-sm text-gray-400">per month</p>
+                </div>
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="btn-primary px-6 py-2 rounded-lg text-white font-semibold"
+                >
+                  {currentSubscriptionData.status === "inactive"
+                    ? "Subscribe Now"
+                    : "Renew"}
+                </button>
+              </div>
+            </div>
 
-        {/* Problem/Solution Section */}
-        <ProblemSolution />
+            {/* Active Subscription Details */}
+            {currentSubscriptionData.status === "active" &&
+              currentSubscriptionData.endDate && (
+                <div className="bg-success-500/20 border border-success-500/30 rounded-lg p-4 mb-4">
+                  <div className="flex items-center space-x-3">
+                    <Check className="w-5 h-5 text-success-400 flex-shrink-0" />
+                    <div>
+                      <p className="text-success-400 font-semibold">
+                        Active Subscription
+                      </p>
+                      <p className="text-sm text-gray-300">
+                        Valid until{" "}
+                        {new Date(
+                          currentSubscriptionData.endDate
+                        ).toLocaleDateString()}
+                      </p>
+                      {currentSubscriptionData.daysRemaining !== undefined && (
+                        <p className="text-sm text-gray-300">
+                          {currentSubscriptionData.daysRemaining > 0 
+                            ? `${currentSubscriptionData.daysRemaining} days remaining`
+                            : "Expires today"}
+                        </p>
+                      )}
+                      {currentSubscriptionData.transactionHash && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Transaction:{" "}
+                          {currentSubscriptionData.transactionHash.substring(0, 20)}...
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
-        {/* How It Works Section */}
-        <HowItWorks />
+            {/* Grace Period Warning */}
+            {currentSubscriptionData.status === "expired" && 
+              currentSubscriptionData.isInGracePeriod && (
+                <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4 mb-4">
+                  <div className="flex items-center space-x-3">
+                    <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                    <div>
+                      <p className="text-yellow-400 font-semibold">
+                        Grace Period Active
+                      </p>
+                      <p className="text-sm text-gray-300">
+                        {currentSubscriptionData.gracePeriodRemaining} days remaining to renew
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Renew now to avoid service interruption
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-        {/* Interactive Risk Calculator */}
-        <RiskCalculator />
+            {/* Subscription Management */}
+            {currentSubscriptionData.status === "active" && (
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={cancelSubscription}
+                  className="text-red-400 hover:text-red-300 text-sm underline"
+                >
+                  Cancel Subscription
+                </button>
+              </div>
+            )}
 
-        {/* Live Performance Dashboard */}
-        <LiveDashboard />
+            {/* Subscription Required Warning */}
+            {currentSubscriptionData.status === "inactive" && (
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4">
+                <div className="flex items-center space-x-3">
+                  <CreditCard className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-red-400 font-semibold">
+                      Subscription Required
+                    </p>
+                    <p className="text-sm text-gray-300">
+                      Subscribe to access all premium trading features and start
+                      earning consistent profits.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
-        {/* Core Features */}
-        <Features />
+            {/* Expired Subscription Warning */}
+            {subscriptionData.status === "expired" && (
+              <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
+                <div className="flex items-center space-x-3">
+                  <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-yellow-400 font-semibold">
+                      Subscription Expired
+                    </p>
+                    <p className="text-sm text-gray-300">
+                      Your subscription has expired. Renew now to continue
+                      accessing premium features.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+          {/* Dashboard Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="glass rounded-2xl p-6 hover-lift"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-success-500/20 rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-success-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">
+                    Total Profit
+                  </h3>
+                  <p className="text-2xl font-bold text-success-500">
+                    {subscriptionData.status === "inactive"
+                      ? "+$0.00"
+                      : "+$2,847.50"}
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    {subscriptionData.status === "inactive"
+                      ? "Subscribe to start earning"
+                      : "+12.3% this month"}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
 
-        {/* Results & Proof */}
-        <Results />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="glass rounded-2xl p-6 hover-lift"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-secondary-500/20 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="w-6 h-6 text-secondary-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">
+                    Active Trades
+                  </h3>
+                  <p className="text-2xl font-bold text-secondary-500">
+                    {subscriptionData.status === "inactive" ? "0" : "7"}
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    {subscriptionData.status === "inactive"
+                      ? "Subscribe to start trading"
+                      : "3 BTC, 2 ETH, 2 others"}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
 
-        {/* Pricing Section */}
-        <Pricing onCTAClick={handleCTAClick} />
-
-        {/* Security & Trust */}
-        <Security />
-
-        {/* FAQ Section */}
-        <FAQ />
-
-        {/* Final CTA */}
-        <FinalCTA onCTAClick={handleCTAClick} />
-      </motion.main>
-
-      <Footer />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="glass rounded-2xl p-6 hover-lift"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-accent-500/20 rounded-lg flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-accent-500" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Win Rate</h3>
+                  <p className="text-2xl font-bold text-accent-500">
+                    {subscriptionData.status === "inactive" ? "--" : "84.6%"}
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    {subscriptionData.status === "inactive"
+                      ? "Available after subscription"
+                      : "Last 30 days"}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+          {/* Welcome Message */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="glass rounded-2xl p-8 text-center"
+          >
+            <h2 className="text-2xl font-bold text-white mb-4">
+              🎉 Welcome to HiMonacci!
+            </h2>
+            <p className="text-gray-400 mb-6">
+              Your account has been successfully created. Subscribe now to
+              unlock our premium trading platform and begin your journey to
+              consistent crypto profits.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => setShowPaymentModal(true)}
+                className="btn-primary px-8 py-3 rounded-lg text-white font-semibold"
+              >
+                Subscribe Now
+              </button>
+              <button className="btn-secondary px-8 py-3 rounded-lg text-white font-semibold">
+                View Features
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
 
       {/* Payment Modal */}
       {showPaymentModal && (
@@ -237,7 +592,7 @@ export default function Home() {
                     </div>
 
                     <div className="space-y-3">
-                      {subscriptionData.features.map((feature, index) => (
+                      {currentSubscriptionData.features.map((feature: string, index: number) => (
                         <div
                           key={index}
                           className="flex items-center space-x-3"
@@ -295,7 +650,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Warning */}
+                  {/* Warning
                   <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mt-6">
                     <div className="flex items-start space-x-3">
                       <Shield className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
@@ -309,7 +664,7 @@ export default function Home() {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Right Column - Payment Methods */}
@@ -518,6 +873,10 @@ export default function Home() {
                       <p className="text-xs text-gray-400">
                         • After sending USDT, copy the transaction hash from
                         your wallet
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        • Transaction hash is required to verify and activate
+                        your subscription
                       </p>
                       <p className="text-xs text-gray-400">
                         • Make sure the transaction is confirmed on the

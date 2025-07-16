@@ -1,7 +1,11 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Star, TrendingUp } from 'lucide-react'
 
-const FinalCTA = () => {
+interface FinalCTAProps {
+  onCTAClick?: () => void
+}
+
+const FinalCTA = ({ onCTAClick }: FinalCTAProps) => {
   return (
     <section className="py-20 relative overflow-hidden">
       {/* Background Elements */}
@@ -74,6 +78,7 @@ const FinalCTA = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={onCTAClick}
                 className="btn-primary px-10 py-4 rounded-xl text-white font-bold text-xl flex items-center space-x-3 shadow-2xl"
               >
                 <span>Start Auto-Trading Now</span>

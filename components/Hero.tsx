@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Play, TrendingUp, Shield, Target } from 'lucide-react'
 
-const Hero = () => {
+interface HeroProps {
+  onCTAClick?: () => void
+}
+
+const Hero = ({ onCTAClick }: HeroProps) => {
   const [counters, setCounters] = useState({
     successRate: 0,
     monthlyReturn: 0,
@@ -151,9 +155,10 @@ const Hero = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={onCTAClick}
             className="btn-primary px-8 py-4 rounded-xl text-white font-semibold text-lg flex items-center space-x-2 shadow-lg"
           >
-            <span>Discover How It Works</span>
+            <span>Start Trading Now</span>
             <ArrowRight className="w-5 h-5" />
           </motion.button>
           
