@@ -240,6 +240,10 @@ export default function Dashboard() {
     return null;
   }
 
+  if (!subscriptionData) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-hero-pattern">
       {/* Navigation */}
@@ -417,7 +421,7 @@ export default function Dashboard() {
             )}
 
             {/* Expired Subscription Warning */}
-            {subscriptionData.status === "expired" && (
+            {subscriptionData?.status === "expired" && (
               <div className="bg-yellow-500/20 border border-yellow-500/30 rounded-lg p-4">
                 <div className="flex items-center space-x-3">
                   <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0" />

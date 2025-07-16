@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { authenticateToken, AuthenticatedRequest } from '@/middleware/auth'
 import connectDB from '@/lib/mongodb'
 import User from '@/models/User'
+import Subscription from '@/models/Subscription'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -20,7 +21,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!userData) {
         return res.status(404).json({ message: 'User not found' })
       }
-      
+      const subscription = await Subscription.findOne({ userId: user.id })
+
+      if (!subscription) {
+        return res.status(403).json({ message: 'Subscription not found' })
+      }
+
       res.status(200).json({
         message: 'User profile retrieved successfully',
         user: {
@@ -29,10 +35,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           lastName: userData.lastName,
           email: userData.email,
           isVerified: userData.isVerified,
-          subscriptionStatus: userData.subscriptionStatus,
-          subscriptionStartDate: userData.subscriptionStartDate,
-          subscriptionEndDate: userData.subscriptionEndDate,
-          paymentTransactionHash: userData.paymentTransactionHash,
+          subscriptionStatus: subscription.isActive() ? 'active' : 'inactive',
+          subscriptionStartDate: subscription.startDate,
+          subscriptionEndDate: subscription.endDate,
+          paymentTransactionHash: subscription.paymentTransactionHash,
         },
       })
     } catch (error) {
