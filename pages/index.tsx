@@ -51,7 +51,7 @@ export default function Home() {
 
   const subscriptionData = {
     plan: "Premium",
-    monthlyPrice: 99,
+    monthlyPrice: 100,
     features: [
       "Advanced Trading Algorithms",
       "24/7 Automated Trading",
@@ -273,7 +273,7 @@ export default function Home() {
                           2
                         </span>
                         <span className="text-sm text-gray-300">
-                          Send exactly $99 USDT to the address
+                          Send exactly $100 USDT to the address
                         </span>
                       </div>
                       <div className="flex items-start space-x-3">
@@ -320,7 +320,7 @@ export default function Home() {
                   <p className="text-sm text-gray-400 mb-6">
                     Send exactly{" "}
                     <span className="text-secondary-500 font-semibold text-base">
-                      $99 USDT
+                      $100 USDT
                     </span>{" "}
                     to one of the addresses below:
                   </p>

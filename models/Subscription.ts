@@ -53,7 +53,7 @@ const subscriptionSchema = new mongoose.Schema<ISubscription>(
     monthlyPrice: {
       type: Number,
       required: true,
-      default: 99
+      default: 100
     },
     paymentHistory: [{
       transactionHash: {

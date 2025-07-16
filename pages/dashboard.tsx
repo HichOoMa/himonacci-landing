@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
 import { useAuth } from "@/contexts/AuthContext";
+import TradingSignals from "@/components/TradingSignals";
 import {
   TrendingUp,
   User,
@@ -75,7 +76,7 @@ export default function Dashboard() {
   const legacySubscriptionData = {
     status: user?.subscriptionStatus || "inactive",
     plan: "Premium",
-    monthlyPrice: 99,
+    monthlyPrice: 100,
     features: [
       "Advanced Trading Algorithms",
       "24/7 Automated Trading",
@@ -95,7 +96,7 @@ export default function Dashboard() {
   const currentSubscriptionData = subscriptionData?.hasSubscription ? {
     status: subscriptionData.subscription.status,
     plan: subscriptionData.subscription.plan || "Premium",
-    monthlyPrice: subscriptionData.subscription.monthlyPrice || 99,
+    monthlyPrice: subscriptionData.subscription.monthlyPrice || 100,
     features: [
       "Advanced Trading Algorithms",
       "24/7 Automated Trading",
@@ -246,32 +247,66 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-hero-pattern">
-      {/* Navigation */}
-      <nav className="bg-primary-950/95 backdrop-blur-md border-b border-gray-800">
+      {/* Enhanced Navigation */}
+      <nav className="bg-primary-950/95 backdrop-blur-xl border-b border-secondary-500/20 shadow-2xl">
+        {/* Animated gradient line */}
+        <div className="h-0.5 bg-gradient-to-r from-secondary-500 via-accent-500 to-secondary-500" />
+        
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-secondary-500 to-accent-500 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-white" />
+            {/* Enhanced Logo */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center space-x-3 group"
+            >
+              <div className="relative">
+                <div className="w-10 h-10 bg-gradient-to-br from-secondary-500 via-accent-500 to-secondary-400 rounded-xl flex items-center justify-center shadow-lg shadow-secondary-500/25 group-hover:shadow-secondary-500/40 transition-shadow duration-300">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-secondary-500/50 to-accent-500/50 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
               </div>
-              <span className="text-xl font-bold gradient-text">HiMonacci</span>
-            </div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold gradient-text">HiMonacci</span>
+                <span className="text-xs text-secondary-400 font-medium -mt-1">Trading Dashboard</span>
+              </div>
+            </motion.div>
 
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <User className="w-5 h-5 text-gray-400" />
-                <span className="text-white font-medium">
-                  {user.firstName} {user.lastName}
-                </span>
+            {/* Enhanced User Section */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center space-x-4"
+            >
+              <div className="flex items-center space-x-4 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-800/50 to-primary-700/50 border border-secondary-500/20 backdrop-blur-sm">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-secondary-500 to-accent-500 rounded-full flex items-center justify-center shadow-lg">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-white font-semibold">
+                      {user.firstName} {user.lastName}
+                    </div>
+                    <div className="text-success-400 text-xs">
+                      Premium Member
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="w-px h-8 bg-gray-600/50" />
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={logout}
+                  className="flex items-center space-x-2 text-gray-400 hover:text-red-400 transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-red-500/10"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">Logout</span>
+                </motion.button>
               </div>
-              <button
-                onClick={logout}
-                className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>Logout</span>
-              </button>
-            </div>
+            </motion.div>
           </div>
         </div>
       </nav>
@@ -518,6 +553,19 @@ export default function Dashboard() {
               </div>
             </motion.div>
           </div>
+          
+          {/* Trading Signals - Only for active subscribers */}
+          {currentSubscriptionData.status === "active" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              className="mb-8"
+            >
+              <TradingSignals token={localStorage.getItem('token') || ''} />
+            </motion.div>
+          )}
+          
           {/* Welcome Message */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -632,7 +680,7 @@ export default function Dashboard() {
                           2
                         </span>
                         <span className="text-sm text-gray-300">
-                          Send exactly $99 USDT to the address
+                          Send exactly $100 USDT to the address
                         </span>
                       </div>
                       <div className="flex items-start space-x-3">
@@ -679,7 +727,7 @@ export default function Dashboard() {
                   <p className="text-sm text-gray-400 mb-6">
                     Send exactly{" "}
                     <span className="text-secondary-500 font-semibold text-base">
-                      $99 USDT
+                      $100 USDT
                     </span>{" "}
                     to one of the addresses below:
                   </p>

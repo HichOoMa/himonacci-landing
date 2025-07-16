@@ -12,6 +12,11 @@ export interface IUser {
   subscriptionStartDate?: Date
   subscriptionEndDate?: Date
   paymentTransactionHash?: string
+  tradingFavorites?: Array<{
+    signalId: string
+    type: 'candle' | 'zone'
+    addedAt: Date
+  }>
   createdAt: Date
   updatedAt: Date
 }
@@ -61,6 +66,11 @@ const userSchema = new mongoose.Schema<IUser>(
     paymentTransactionHash: {
       type: String,
     },
+    tradingFavorites: [{
+      signalId: { type: String, required: true },
+      type: { type: String, enum: ['candle', 'zone'], required: true },
+      addedAt: { type: Date, default: Date.now },
+    }],
   },
   {
     timestamps: true,
