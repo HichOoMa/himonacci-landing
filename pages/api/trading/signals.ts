@@ -126,11 +126,6 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
     // Filter out zones with null candle (deleted candles)
     const validZones = zones.filter(zone => zone.candle);
     
-    console.log(`Fetched ${candles.length} candles and ${validZones.length} zones`);
-    if (isFavoritesOnly) {
-      console.log(`Favorites mode - User has ${req.user.tradingFavorites?.length || 0} total favorites`);
-    }
-
     // Transform data to common format
     const candleSignals = candles.map(candle => ({
       id: candle._id,
@@ -159,8 +154,6 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
       type: "zone" as const,
       priority: 3,
     }));
-
-    console.log(`Fetched ${candleSignals.length} candles and ${zoneSignals.length} zones`);
 
     // Combine and filter by expected profit > 1%
     const symbols = Array.from(new Set([...candleSignals, ...zoneSignals].map(s => s.symbol)));
