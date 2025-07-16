@@ -565,34 +565,6 @@ export default function Dashboard() {
               <TradingSignals token={localStorage.getItem('token') || ''} />
             </motion.div>
           )}
-          
-          {/* Welcome Message */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-            className="glass rounded-2xl p-8 text-center"
-          >
-            <h2 className="text-2xl font-bold text-white mb-4">
-              🎉 Welcome to HiMonacci!
-            </h2>
-            <p className="text-gray-400 mb-6">
-              Your account has been successfully created. Subscribe now to
-              unlock our premium trading platform and begin your journey to
-              consistent crypto profits.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="btn-primary px-8 py-3 rounded-lg text-white font-semibold"
-              >
-                Subscribe Now
-              </button>
-              <button className="btn-secondary px-8 py-3 rounded-lg text-white font-semibold">
-                View Features
-              </button>
-            </div>
-          </motion.div>
         </motion.div>
       </div>
 

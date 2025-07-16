@@ -192,26 +192,35 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
       return profitPercent >= 1;
     });
 
+    // Remove duplicates: keep only one signal with same symbol and same closePrice
+    const uniqueSignals = new Map<string, any>();
+    allSignals.forEach(signal => {
+      const key = `${signal.symbol}_${signal.closePrice}`;
+      if (!uniqueSignals.has(key)) {
+      uniqueSignals.set(key, signal);
+      }
+    });
+    allSignals = Array.from(uniqueSignals.values());
     // Apply filters
-    // if (filterBy && filterValue) {
-    //   const filterVal = filterValue as string;
-    //   switch (filterBy) {
-    //     case "symbol":
-    //       allSignals = allSignals.filter(signal => 
-    //         signal.symbol.toLowerCase().includes(filterVal.toLowerCase())
-    //       );
-    //       break;
-    //     case "algo":
-    //       allSignals = allSignals.filter(signal => signal.algo === filterVal);
-    //       break;
-    //     case "minProfit":
-    //       allSignals = allSignals.filter(signal => {
-    //         const profitPercent = ((signal.closePrice - signal.currentPrice) / signal.currentPrice) * 100;
-    //         return profitPercent >= parseFloat(filterVal);
-    //       });
-    //       break;
-    //   }
-    // }
+    if (filterBy && filterValue) {
+      const filterVal = filterValue as string;
+      switch (filterBy) {
+        case "symbol":
+          allSignals = allSignals.filter(signal => 
+            signal.symbol.toLowerCase().includes(filterVal.toLowerCase())
+          );
+          break;
+        case "algo":
+          allSignals = allSignals.filter(signal => signal.algo === filterVal);
+          break;
+        case "minProfit":
+          allSignals = allSignals.filter(signal => {
+            const profitPercent = ((signal.closePrice - signal.currentPrice) / signal.currentPrice) * 100;
+            return profitPercent >= parseFloat(filterVal);
+          });
+          break;
+      }
+    }
 
     // Apply sorting
     allSignals.sort((a, b) => {
