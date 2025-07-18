@@ -312,25 +312,25 @@ export default function Dashboard() {
         <div className="h-0.5 bg-gradient-to-r from-secondary-500 via-accent-500 to-secondary-500" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-16 sm:h-18 lg:h-20">
             {/* Enhanced Logo */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center space-x-3 group"
+              className="flex items-center space-x-2 sm:space-x-3 group flex-shrink-0"
             >
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-secondary-500 via-accent-500 to-secondary-400 rounded-xl flex items-center justify-center shadow-lg shadow-secondary-500/25 group-hover:shadow-secondary-500/40 transition-shadow duration-300">
-                  <TrendingUp className="w-6 h-6 text-white" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-secondary-500 via-accent-500 to-secondary-400 rounded-xl flex items-center justify-center shadow-lg shadow-secondary-500/25 group-hover:shadow-secondary-500/40 transition-shadow duration-300">
+                  <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                 </div>
                 {/* Glow effect */}
                 <div className="absolute inset-0 bg-gradient-to-br from-secondary-500/50 to-accent-500/50 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
               </div>
               <div className="flex flex-col">
-                <span className="text-2xl font-bold gradient-text">
+                <span className="text-lg sm:text-xl lg:text-2xl font-bold gradient-text">
                   HiMonacci
                 </span>
-                <span className="text-xs text-secondary-400 font-medium -mt-1">
+                <span className="text-xs text-secondary-400 font-medium -mt-1 hidden sm:block">
                   Trading Dashboard
                 </span>
               </div>
@@ -340,15 +340,15 @@ export default function Dashboard() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center space-x-4"
+              className="flex items-center space-x-2 sm:space-x-4"
             >
-              <div className="flex items-center space-x-4 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-800/50 to-primary-700/50 border border-secondary-500/20 backdrop-blur-sm">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-secondary-500 to-accent-500 rounded-full flex items-center justify-center shadow-lg">
-                    <User className="w-5 h-5 text-white" />
+              <div className="flex items-center space-x-2 sm:space-x-4 px-2 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-primary-800/50 to-primary-700/50 border border-secondary-500/20 backdrop-blur-sm">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-secondary-500 to-accent-500 rounded-full flex items-center justify-center shadow-lg">
+                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
-                  <div className="text-left">
-                    <div className="text-white font-semibold">
+                  <div className="text-left hidden md:block">
+                    <div className="text-white font-semibold text-sm">
                       {user.firstName} {user.lastName}
                     </div>
                     <div className="text-success-400 text-xs">
@@ -357,16 +357,16 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div className="w-px h-8 bg-gray-600/50" />
+                <div className="w-px h-6 sm:h-8 bg-gray-600/50 hidden md:block" />
 
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={logout}
-                  className="flex items-center space-x-2 text-gray-400 hover:text-red-400 transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-red-500/10"
+                  className="flex items-center space-x-1 sm:space-x-2 text-gray-400 hover:text-red-400 transition-colors duration-200 px-2 sm:px-3 py-2 rounded-lg hover:bg-red-500/10"
                 >
-                  <LogOut className="w-5 h-5" />
-                  <span className="font-medium">Logout</span>
+                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="font-medium text-sm sm:text-base hidden sm:inline">Logout</span>
                 </motion.button>
               </div>
             </motion.div>

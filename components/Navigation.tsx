@@ -55,28 +55,28 @@ const Navigation = () => {
       }`} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-16">
+        <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20">
           {/* Enhanced Logo */}
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="flex items-center space-x-3 group"
+            className="flex items-center space-x-2 sm:space-x-3 group flex-shrink-0"
           >
             <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-secondary-500 via-accent-500 to-secondary-400 rounded-xl flex items-center justify-center shadow-lg shadow-secondary-500/25 group-hover:shadow-secondary-500/40 transition-shadow duration-300 nav-pulse">
-                <TrendingUp className="w-6 h-6 text-white" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-secondary-500 via-accent-500 to-secondary-400 rounded-xl flex items-center justify-center shadow-lg shadow-secondary-500/25 group-hover:shadow-secondary-500/40 transition-shadow duration-300 nav-pulse">
+                <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
               </div>
               {/* Glow effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-secondary-500/50 to-accent-500/50 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-bold gradient-text">HiMonacci</span>
-              <span className="text-xs text-secondary-400 font-medium -mt-1">Trading Platform</span>
+              <span className="text-lg sm:text-xl lg:text-2xl font-bold gradient-text">HiMonacci</span>
+              <span className="text-xs text-secondary-400 font-medium -mt-1 hidden sm:block">Trading Platform</span>
             </div>
           </motion.div>
 
           {/* Centered Navigation Items */}
           <div className="flex-1 flex justify-center">
-            <div className="hidden md:flex items-center space-x-1">
+            <div className="hidden lg:flex items-center space-x-1">
               {navItems.map((item, index) => (
                 <motion.a
                   key={item.name}
@@ -85,35 +85,36 @@ const Navigation = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   whileHover={{ scale: 1.05 }}
-                  className="relative group px-4 py-2 rounded-lg transition-all duration-300 hover:bg-secondary-500/10"
+                  className="relative group px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 hover:bg-secondary-500/10"
                 >
                   <div className="flex items-center space-x-2">
                     {item.icon && <item.icon className="w-4 h-4 text-gray-400 group-hover:text-secondary-400 transition-colors" />}
-                    <span className="text-gray-300 group-hover:text-secondary-400 transition-colors duration-200 font-medium">
+                    <span className="text-sm lg:text-base text-gray-300 group-hover:text-secondary-400 transition-colors duration-200 font-medium">
                       {item.name}
                     </span>
                   </div>
                   {/* Animated underline */}
-                  <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-gradient-to-r from-secondary-500 to-accent-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+                  <div className="absolute bottom-0 left-3 lg:left-4 right-3 lg:right-4 h-0.5 bg-gradient-to-r from-secondary-500 to-accent-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
                 </motion.a>
               ))}
             </div>
           </div>
 
           {/* Enhanced User Section */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {user ? (
               <div className="relative user-dropdown">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleUserDropdown}
-                  className="flex items-center space-x-3 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-800/50 to-primary-700/50 hover:from-primary-700/70 hover:to-primary-600/70 border border-secondary-500/20 hover:border-secondary-500/40 transition-all duration-300 backdrop-blur-sm"
+                  className="flex items-center space-x-2 sm:space-x-3 px-2 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-primary-800/50 to-primary-700/50 hover:from-primary-700/70 hover:to-primary-600/70 border border-secondary-500/20 hover:border-secondary-500/40 transition-all duration-300 backdrop-blur-sm"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-secondary-500 to-accent-500 rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4 text-white" />
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-secondary-500 to-accent-500 rounded-full flex items-center justify-center">
+                    <User className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   </div>
-                  <div className="text-left">
+                  {/* Hide user details on mobile, show on medium screens and up */}
+                  <div className="text-left hidden md:block">
                     <div className="text-white font-medium text-sm">
                       {user.firstName} {user.lastName}
                     </div>
@@ -125,7 +126,7 @@ const Navigation = () => {
                       {user.subscriptionStatus === 'active' ? 'Premium' : 'Free'}
                     </div>
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                  <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-400 transition-transform duration-200 ${
                     showUserDropdown ? 'rotate-180' : ''
                   }`} />
                 </motion.button>
@@ -138,19 +139,19 @@ const Navigation = () => {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute right-0 mt-2 w-64 bg-primary-900/95 backdrop-blur-xl rounded-2xl border border-secondary-500/20 shadow-2xl shadow-secondary-500/10 overflow-hidden z-[60]"
+                      className="absolute right-0 mt-2 w-56 sm:w-64 bg-primary-900/95 backdrop-blur-xl rounded-2xl border border-secondary-500/20 shadow-2xl shadow-secondary-500/10 overflow-hidden z-[60]"
                       style={{ zIndex: 60 }}
                     >
-                      <div className="p-4 border-b border-gray-700/50">
+                      <div className="p-3 sm:p-4 border-b border-gray-700/50">
                         <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-secondary-500 to-accent-500 rounded-full flex items-center justify-center">
-                            <User className="w-6 h-6 text-white" />
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-secondary-500 to-accent-500 rounded-full flex items-center justify-center">
+                            <User className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                           </div>
-                          <div>
-                            <div className="text-white font-semibold">
+                          <div className="min-w-0 flex-1">
+                            <div className="text-white font-semibold text-sm sm:text-base truncate">
                               {user.firstName} {user.lastName}
                             </div>
-                            <div className="text-gray-400 text-sm">{user.email}</div>
+                            <div className="text-gray-400 text-xs sm:text-sm truncate">{user.email}</div>
                             <div className={`text-xs px-2 py-1 rounded-full inline-block mt-1 ${
                               user.subscriptionStatus === 'active' 
                                 ? 'bg-success-500/20 text-success-400' 
@@ -208,12 +209,12 @@ const Navigation = () => {
                 </AnimatePresence>
               </div>
             ) : (
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <Link href="/login">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-6 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-primary-800/50 transition-all duration-300 font-medium border border-transparent hover:border-gray-600/50"
+                    className="px-3 sm:px-6 py-2 rounded-xl text-sm sm:text-base text-gray-300 hover:text-white hover:bg-primary-800/50 transition-all duration-300 font-medium border border-transparent hover:border-gray-600/50"
                   >
                     Login
                   </motion.button>
@@ -222,9 +223,10 @@ const Navigation = () => {
                   <motion.button
                     whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(139, 92, 246, 0.3)' }}
                     whileTap={{ scale: 0.95 }}
-                    className="btn-primary px-8 py-2.5 rounded-xl text-white font-semibold shadow-lg shadow-secondary-500/25 hover:shadow-secondary-500/40 transition-all duration-300"
+                    className="btn-primary px-4 sm:px-8 py-2 sm:py-2.5 rounded-xl text-sm sm:text-base text-white font-semibold shadow-lg shadow-secondary-500/25 hover:shadow-secondary-500/40 transition-all duration-300"
                   >
-                    Get Started
+                    <span className="hidden sm:inline">Get Started</span>
+                    <span className="sm:hidden">Start</span>
                   </motion.button>
                 </Link>
               </div>
@@ -243,9 +245,9 @@ const Navigation = () => {
                   transition={{ duration: 0.3 }}
                 >
                   {isOpen ? (
-                    <X className="w-6 h-6 text-white" />
+                    <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   ) : (
-                    <Menu className="w-6 h-6 text-white" />
+                    <Menu className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   )}
                 </motion.div>
               </motion.button>
@@ -261,9 +263,9 @@ const Navigation = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="md:hidden overflow-hidden bg-primary-900/95 backdrop-blur-xl rounded-2xl mx-4 mb-4 border border-secondary-500/20 shadow-2xl"
+              className="md:hidden overflow-hidden bg-primary-900/95 backdrop-blur-xl rounded-2xl mx-2 sm:mx-4 mb-4 border border-secondary-500/20 shadow-2xl"
             >
-              <div className="p-6 space-y-4">
+              <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                 {navItems.map((item, index) => (
                   <motion.a
                     key={item.name}
@@ -275,22 +277,22 @@ const Navigation = () => {
                     onClick={() => setIsOpen(false)}
                   >
                     {item.icon && <item.icon className="w-5 h-5 text-gray-400 group-hover:text-secondary-400 transition-colors" />}
-                    <span>{item.name}</span>
+                    <span className="text-sm sm:text-base">{item.name}</span>
                   </motion.a>
                 ))}
                 
                 {/* Mobile menu for authenticated/unauthenticated users */}
                 {user ? (
-                  <div className="space-y-4 pt-4 border-t border-gray-700/50">
-                    <div className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-primary-800/50 to-primary-700/50 border border-secondary-500/20">
-                      <div className="w-10 h-10 bg-gradient-to-br from-secondary-500 to-accent-500 rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-white" />
+                  <div className="space-y-3 sm:space-y-4 pt-4 border-t border-gray-700/50">
+                    <div className="flex items-center space-x-3 px-4 py-3 mb-3 rounded-xl bg-gradient-to-r from-primary-800/50 to-primary-700/50 border border-secondary-500/20">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-secondary-500 to-accent-500 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                       </div>
-                      <div>
-                        <div className="text-white font-semibold">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-white font-semibold text-sm sm:text-base truncate">
                           {user.firstName} {user.lastName}
                         </div>
-                        <div className={`text-xs ${
+                        <div className={`text-xs sm:text-sm ${
                           user.subscriptionStatus === 'active' 
                             ? 'text-success-400' 
                             : 'text-yellow-400'
@@ -305,25 +307,25 @@ const Navigation = () => {
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-secondary-500 to-accent-500 hover:from-secondary-600 hover:to-accent-600 text-white font-semibold shadow-lg transition-all duration-300"
+                          className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-secondary-500 to-accent-500 hover:from-secondary-600 hover:to-accent-600 text-white font-semibold shadow-lg transition-all duration-300"
                           onClick={() => setIsOpen(false)}
                         >
                           <TrendingUp className="w-5 h-5" />
-                          <span>Dashboard</span>
+                          <span className="text-sm sm:text-base">Dashboard</span>
                         </motion.button>
                       </Link>
                     ) : (
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-accent-500 to-secondary-500 hover:from-accent-600 hover:to-secondary-600 text-white font-semibold shadow-lg transition-all duration-300"
+                        className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-accent-500 to-secondary-500 hover:from-accent-600 hover:to-secondary-600 text-white font-semibold shadow-lg transition-all duration-300"
                         onClick={() => {
                           setIsOpen(false)
                           document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
                         }}
                       >
                         <Sparkles className="w-5 h-5" />
-                        <span>Upgrade to Premium</span>
+                        <span className="text-sm sm:text-base">Upgrade to Premium</span>
                       </motion.button>
                     )}
                     
@@ -334,19 +336,19 @@ const Navigation = () => {
                         logout()
                         setIsOpen(false)
                       }}
-                      className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors font-medium"
+                      className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors font-medium"
                     >
                       <LogOut className="w-5 h-5" />
-                      <span>Logout</span>
+                      <span className="text-sm sm:text-base">Logout</span>
                     </motion.button>
                   </div>
                 ) : (
-                  <div className="space-y-4 pt-4 border-t border-gray-700/50">
+                  <div className="space-y-3 sm:space-y-4 pt-4 border-t border-gray-700/50">
                     <Link href="/login">
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="w-full px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-primary-800/50 transition-all duration-300 font-medium border border-gray-600/50"
+                        className="w-full px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-primary-800/50 transition-all duration-300 font-medium border border-gray-600/50 text-sm sm:text-base"
                         onClick={() => setIsOpen(false)}
                       >
                         Login
@@ -356,7 +358,7 @@ const Navigation = () => {
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-secondary-500 to-accent-500 hover:from-secondary-600 hover:to-accent-600 text-white font-semibold shadow-lg transition-all duration-300"
+                        className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-secondary-500 to-accent-500 hover:from-secondary-600 hover:to-accent-600 text-white font-semibold shadow-lg transition-all duration-300 text-sm sm:text-base"
                         onClick={() => setIsOpen(false)}
                       >
                         Get Started
