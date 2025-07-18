@@ -49,6 +49,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lastName: user.lastName,
         email: user.email,
         isVerified: user.isVerified,
+        subscriptionStatus: user.subscriptionStatus,
+        subscriptionStartDate: user.subscriptionStartDate,
+        subscriptionEndDate: user.subscriptionEndDate,
+        paymentTransactionHash: user.paymentTransactionHash,
+        hasUsedFreeTrial: user.hasUsedFreeTrial,
+        freeTrialStartDate: user.freeTrialStartDate,
+        freeTrialEndDate: user.freeTrialEndDate,
       },
     })
   } catch (error) {

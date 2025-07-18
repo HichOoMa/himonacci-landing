@@ -53,10 +53,22 @@ export default function Register() {
       })
 
       if (response.ok) {
-        router.push('/login?message=Registration successful! Please log in.')
+        const data = await response.json()
+        // Store token for potential login
+        if (data.token) {
+          localStorage.setItem('token', data.token)
+        }
+        
+        if (data.emailSent) {
+          router.push('/login?message=Registration successful! Please check your email to verify your account and start your free trial.')
+        } else {
+          router.push('/resend-verification?message=Account created but verification email failed. Please request a new verification email.')
+        }
       } else {
         const errorData = await response.json()
         console.error('Registration failed:', errorData.message)
+        // Show error message to user
+        alert(errorData.message || 'Registration failed')
       }
     } catch (error) {
       console.error('Registration error:', error)
@@ -83,7 +95,25 @@ export default function Register() {
           </Link>
           
           <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-          <p className="text-gray-400">Join thousands of successful traders</p>
+          <p className="text-gray-400 mb-4">Join thousands of successful traders</p>
+          
+          {/* Free Trial Banner */}
+          <div className="bg-gradient-to-r from-success-500/20 to-accent-500/20 border border-success-500/30 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <div className="w-6 h-6 bg-success-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-bold">!</span>
+              </div>
+              <span className="text-success-400 font-semibold">Free 1-Hour Trial</span>
+            </div>
+            <p className="text-sm text-gray-300 text-center">
+              Get instant access to all premium features after email verification
+            </p>
+            <div className="flex justify-center mt-2 space-x-4 text-xs text-gray-400">
+              <span>✓ Real-time signals</span>
+              <span>✓ Advanced algorithms</span>
+              <span>✓ Risk management</span>
+            </div>
+          </div>
         </div>
 
         {/* Form */}

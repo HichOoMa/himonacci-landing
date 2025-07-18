@@ -3,11 +3,12 @@ import mongoose from 'mongoose'
 export interface ISubscription {
   _id: string
   userId: mongoose.Types.ObjectId
-  plan: 'premium' | 'basic'
+  plan: 'premium' | 'basic' | 'trial'
   status: 'active' | 'expired' | 'cancelled' | 'pending'
   startDate: Date
   endDate: Date
   monthlyPrice: number
+  isFreeTrial: boolean
   paymentHistory: {
     transactionHash: string
     amount: number
@@ -34,7 +35,7 @@ const subscriptionSchema = new mongoose.Schema<ISubscription>(
     },
     plan: {
       type: String,
-      enum: ['premium', 'basic'],
+      enum: ['premium', 'basic', 'trial'],
       default: 'premium'
     },
     status: {
@@ -54,6 +55,10 @@ const subscriptionSchema = new mongoose.Schema<ISubscription>(
       type: Number,
       required: true,
       default: 100
+    },
+    isFreeTrial: {
+      type: Boolean,
+      default: false
     },
     paymentHistory: [{
       transactionHash: {

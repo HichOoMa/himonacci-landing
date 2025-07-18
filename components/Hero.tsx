@@ -158,7 +158,7 @@ const Hero = ({ onCTAClick }: HeroProps) => {
             onClick={onCTAClick}
             className="btn-primary px-8 py-4 rounded-xl text-white font-semibold text-lg flex items-center space-x-2 shadow-lg"
           >
-            <span>Start Trading Now</span>
+            <span>Start Free Trial</span>
             <ArrowRight className="w-5 h-5" />
           </motion.button>
           
@@ -171,6 +171,18 @@ const Hero = ({ onCTAClick }: HeroProps) => {
           </motion.button>
         </motion.div>
 
+        {/* Free Trial Notice */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1.1 }}
+          className="bg-success-500/10 border border-success-500/20 rounded-lg p-4 mb-8 max-w-2xl mx-auto"
+        >
+          <p className="text-success-400 text-sm text-center font-semibold">
+            🚀 Free 1-Hour Trial Available • No Credit Card Required • Instant Access After Email Verification
+          </p>
+        </motion.div>
+
         {/* Trust Indicators */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -180,7 +192,7 @@ const Hero = ({ onCTAClick }: HeroProps) => {
         >
           <div className="flex items-center space-x-2">
             <Shield className="w-5 h-5 text-success-500" />
-            <span>No Withdrawal Access</span>
+            <span>1-Hour Free Trial</span>
           </div>
           <div className="flex items-center space-x-2">
             <Target className="w-5 h-5 text-secondary-500" />

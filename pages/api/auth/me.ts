@@ -23,7 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       const subscription = await Subscription.findOne({ userId: user.id })
 
-      if (!subscription) {
+      // Don't require subscription for unverified users or trial users
+      if (!subscription && userData.subscriptionStatus !== 'inactive' && userData.subscriptionStatus !== 'trial') {
         return res.status(403).json({ message: 'Subscription not found' })
       }
 
@@ -35,10 +36,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           lastName: userData.lastName,
           email: userData.email,
           isVerified: userData.isVerified,
-          subscriptionStatus: subscription.isActive() ? 'active' : 'inactive',
-          subscriptionStartDate: subscription.startDate,
-          subscriptionEndDate: subscription.endDate,
-          paymentTransactionHash: subscription.paymentTransactionHash,
+          subscriptionStatus: userData.subscriptionStatus,
+          subscriptionStartDate: userData.subscriptionStartDate,
+          subscriptionEndDate: userData.subscriptionEndDate,
+          paymentTransactionHash: userData.paymentTransactionHash,
+          hasUsedFreeTrial: userData.hasUsedFreeTrial,
+          freeTrialStartDate: userData.freeTrialStartDate,
+          freeTrialEndDate: userData.freeTrialEndDate,
         },
       })
     } catch (error) {

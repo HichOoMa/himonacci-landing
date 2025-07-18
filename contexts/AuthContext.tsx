@@ -7,10 +7,13 @@ interface User {
   lastName: string
   email: string
   isVerified: boolean
-  subscriptionStatus: 'inactive' | 'active' | 'expired'
+  subscriptionStatus: 'inactive' | 'active' | 'expired' | 'trial'
   subscriptionStartDate?: string
   subscriptionEndDate?: string
   paymentTransactionHash?: string
+  hasUsedFreeTrial: boolean
+  freeTrialStartDate?: string
+  freeTrialEndDate?: string
 }
 
 interface AuthContextType {

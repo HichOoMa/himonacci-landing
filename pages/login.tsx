@@ -99,12 +99,17 @@ export default function Login() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className={`mb-6 p-4 rounded-lg ${
-              message.includes('successful') 
+              message.includes('successful') || message.includes('verify')
                 ? 'bg-success-500/20 border border-success-500/30 text-success-400' 
                 : 'bg-red-500/20 border border-red-500/30 text-red-400'
             }`}
           >
-            {message}
+            <p className="text-sm">{message}</p>
+            {message.includes('verify') && (
+              <Link href="/resend-verification" className="text-sm underline hover:no-underline mt-2 block">
+                Didn't receive the email? Resend verification
+              </Link>
+            )}
           </motion.div>
         )}
 
@@ -232,11 +237,17 @@ export default function Login() {
           </div>
 
           {/* Register Link */}
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-2">
             <p className="text-gray-400">
               Don't have an account?{' '}
               <Link href="/register" className="text-secondary-500 hover:text-secondary-400 transition-colors font-semibold">
                 Create account
+              </Link>
+            </p>
+            <p className="text-gray-400">
+              Need to verify your email?{' '}
+              <Link href="/resend-verification" className="text-accent-500 hover:text-accent-400 transition-colors font-semibold">
+                Resend verification
               </Link>
             </p>
           </div>

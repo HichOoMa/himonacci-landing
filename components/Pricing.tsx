@@ -5,8 +5,52 @@ interface PricingProps {
   onCTAClick?: () => void;
 }
 
+interface PlanBase {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  limitations: string[];
+  minCapital: string;
+  buttonText: string;
+  buttonStyle: string;
+}
+
+interface TrialPlan extends PlanBase {
+  isTrial: true;
+  popular?: never;
+}
+
+interface RegularPlan extends PlanBase {
+  popular: boolean;
+  isTrial?: never;
+}
+
+type Plan = TrialPlan | RegularPlan;
+
 const Pricing = ({ onCTAClick }: PricingProps) => {
-  const plans = [
+  const freeTrialPlan: TrialPlan = {
+    name: "Free Trial",
+    price: "FREE",
+    period: "1 hour",
+    description: "Experience all premium features instantly",
+    features: [
+      "Full premium access for 1 hour",
+      "Real-time trading signals",
+      "Advanced market analysis",
+      "Risk management tools",
+      "Live dashboard access",
+      "All educational resources",
+    ],
+    limitations: ["One trial per email address", "Email verification required"],
+    minCapital: "No minimum required",
+    buttonText: "Start Free Trial",
+    buttonStyle: "bg-gradient-to-r from-success-500 to-success-600 hover:from-success-600 hover:to-success-700",
+    isTrial: true,
+  };
+
+  const plans: RegularPlan[] = [
     {
       name: "Dashboard Access",
       price: "$100",
@@ -47,6 +91,8 @@ const Pricing = ({ onCTAClick }: PricingProps) => {
     },
   ];
 
+  const allPlans: Plan[] = [freeTrialPlan, ...plans];
+
   return (
     <section id="pricing" className="py-20 relative overflow-hidden">
       {/* Background Elements */}
@@ -68,15 +114,14 @@ const Pricing = ({ onCTAClick }: PricingProps) => {
             Simple <span className="gradient-text">Pricing</span>
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Choose the plan that fits your trading goals. Both plans include our
-            core technology, with the Auto-Trading package providing full
-            automation.
+            Start with our free trial, then choose the plan that fits your trading goals. 
+            All plans include our core technology, with the Auto-Trading package providing full automation.
           </p>
         </motion.div>
 
         {/* Pricing Cards */}
-        <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
-          {plans.map((plan, index) => (
+        <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto mb-16">
+          {allPlans.map((plan, index) => (
             <motion.div
               key={plan.name}
               initial={{ opacity: 0, y: 40 }}
@@ -84,14 +129,27 @@ const Pricing = ({ onCTAClick }: PricingProps) => {
               transition={{ duration: 0.8, delay: index * 0.2 }}
               viewport={{ once: true }}
               className={`relative glass rounded-2xl p-8 hover-lift flex flex-col justify-between ${
-                plan.popular ? "border-2 border-secondary-500" : ""
+                'popular' in plan && plan.popular
+                  ? "border-2 border-secondary-500" 
+                  : 'isTrial' in plan && plan.isTrial
+                  ? "border-2 border-success-500 bg-gradient-to-br from-success-500/5 to-success-600/5" 
+                  : ""
               }`}
             >
-              {plan.popular && (
+              {'popular' in plan && plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <div className="bg-secondary-500 text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center space-x-2">
                     <Star className="w-4 h-4" />
                     <span>Most Popular</span>
+                  </div>
+                </div>
+              )}
+
+              {'isTrial' in plan && plan.isTrial && (
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <div className="bg-success-500 text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center space-x-2">
+                    <Zap className="w-4 h-4" />
+                    <span>Try Now</span>
                   </div>
                 </div>
               )}
@@ -103,7 +161,7 @@ const Pricing = ({ onCTAClick }: PricingProps) => {
                   </h3>
                   <p className="text-gray-400 mb-4">{plan.description}</p>
                   <div className="mb-4">
-                    <span className="text-4xl font-bold text-white">
+                    <span className={`text-4xl font-bold ${'isTrial' in plan && plan.isTrial ? 'text-success-400' : 'text-white'}`}>
                       {plan.price}
                     </span>
                     <span className="text-gray-400 ml-2">{plan.period}</span>
@@ -120,7 +178,7 @@ const Pricing = ({ onCTAClick }: PricingProps) => {
                   <div>
                     <h4 className="text-white font-semibold mb-3 flex items-center">
                       <Check className="w-5 h-5 text-success-500 mr-2" />
-                      Included Features
+                      {'isTrial' in plan && plan.isTrial ? "Trial Features" : "Included Features"}
                     </h4>
                     <ul className="space-y-2">
                       {plan.features.map((feature, featureIndex) => (
@@ -141,7 +199,7 @@ const Pricing = ({ onCTAClick }: PricingProps) => {
                     <div>
                       <h4 className="text-white font-semibold mb-3 flex items-center">
                         <Shield className="w-5 h-5 text-accent-500 mr-2" />
-                        Important Notes
+                        {'isTrial' in plan && plan.isTrial ? "Requirements" : "Important Notes"}
                       </h4>
                       <ul className="space-y-2">
                         {plan.limitations.map((limitation, limitIndex) => (
@@ -159,6 +217,14 @@ const Pricing = ({ onCTAClick }: PricingProps) => {
                     </div>
                   )}
                 </div>
+
+                {'isTrial' in plan && plan.isTrial && (
+                  <div className="mb-6 p-4 bg-success-500/10 border border-success-500/20 rounded-lg">
+                    <p className="text-success-400 text-sm text-center">
+                      <strong>No payment required!</strong> Just verify your email and start trading immediately.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <motion.button

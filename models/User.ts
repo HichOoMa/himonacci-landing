@@ -8,10 +8,15 @@ export interface IUser {
   email: string
   password: string
   isVerified: boolean
-  subscriptionStatus: 'inactive' | 'active' | 'expired'
+  emailVerificationToken?: string
+  emailVerificationExpires?: Date
+  subscriptionStatus: 'inactive' | 'active' | 'expired' | 'trial'
   subscriptionStartDate?: Date
   subscriptionEndDate?: Date
   paymentTransactionHash?: string
+  hasUsedFreeTrial: boolean
+  freeTrialStartDate?: Date
+  freeTrialEndDate?: Date
   tradingFavorites?: Array<{
     signalId: string
     type: 'candle' | 'zone'
@@ -52,9 +57,15 @@ const userSchema = new mongoose.Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    emailVerificationToken: {
+      type: String,
+    },
+    emailVerificationExpires: {
+      type: Date,
+    },
     subscriptionStatus: {
       type: String,
-      enum: ['inactive', 'active', 'expired'],
+      enum: ['inactive', 'active', 'expired', 'trial'],
       default: 'inactive',
     },
     subscriptionStartDate: {
@@ -65,6 +76,16 @@ const userSchema = new mongoose.Schema<IUser>(
     },
     paymentTransactionHash: {
       type: String,
+    },
+    hasUsedFreeTrial: {
+      type: Boolean,
+      default: false,
+    },
+    freeTrialStartDate: {
+      type: Date,
+    },
+    freeTrialEndDate: {
+      type: Date,
     },
     tradingFavorites: [{
       signalId: { type: String, required: true },

@@ -81,7 +81,7 @@ const FinalCTA = ({ onCTAClick }: FinalCTAProps) => {
                 onClick={onCTAClick}
                 className="btn-primary px-10 py-4 rounded-xl text-white font-bold text-xl flex items-center space-x-3 shadow-2xl"
               >
-                <span>Start Auto-Trading Now</span>
+                <span>Start Free Trial Now</span>
                 <ArrowRight className="w-6 h-6" />
               </motion.button>
               
@@ -92,6 +92,19 @@ const FinalCTA = ({ onCTAClick }: FinalCTAProps) => {
               >
                 View Dashboard Demo
               </motion.button>
+            </motion.div>
+
+            {/* Free Trial Notice */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+              viewport={{ once: true }}
+              className="bg-success-500/10 border border-success-500/20 rounded-lg p-4 mb-8 max-w-2xl mx-auto"
+            >
+              <p className="text-success-400 text-sm text-center font-semibold">
+                🚀 Start with a FREE 1-hour trial • No payment required • Experience all features instantly
+              </p>
             </motion.div>
 
             {/* Trust Indicators */}

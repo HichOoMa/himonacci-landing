@@ -1,5 +1,6 @@
 // This file should only be imported on the server side
 import SubscriptionCronService from '@/lib/subscriptionCron'
+import { startTrialExpirationCron } from '@/lib/trialCron'
 
 let cronJobsInitialized = false
 
@@ -18,15 +19,19 @@ export async function initializeServerCronJobs() {
   }
 
   if (process.env.NODE_ENV === 'production' || process.env.ENABLE_CRON === 'true') {
-    console.log('Initializing server-side subscription cron jobs...')
+    console.log('Initializing server-side cron jobs...')
     
     try {
       const cronService = SubscriptionCronService.getInstance()
       cronService.startMonthlyChecks()
+      
+      // Start trial expiration cron job
+      startTrialExpirationCron()
+      
       cronJobsInitialized = true
-      console.log('Server-side subscription cron jobs initialized successfully')
+      console.log('Server-side cron jobs initialized successfully')
     } catch (error) {
-      console.error('Failed to initialize server-side subscription cron jobs:', error)
+      console.error('Failed to initialize server-side cron jobs:', error)
     }
     
     // Graceful shutdown handlers
