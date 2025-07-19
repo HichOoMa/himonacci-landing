@@ -21,7 +21,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const router = useRouter()
-  const { login } = useAuth()
+  const { login, user } = useAuth()
 
   const {
     register,
@@ -31,6 +31,12 @@ export default function Login() {
     resolver: zodResolver(loginSchema),
   })
 
+  useEffect(() => {
+    // Redirect if user is already logged in
+    if (user) {
+      router.push('/dashboard')
+    }
+  }, [user, router])
   useEffect(() => {
     // Check for success message from registration
     if (router.query.message) {

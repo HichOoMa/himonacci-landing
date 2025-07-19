@@ -5,32 +5,11 @@ import User from "@/models/User";
 import Candle from "@/models/candle";
 import Zone from "@/models/zone";
 import { ValidationDirection, ZoneStatus } from "@/enums/validationDirections";
+import Authenticate from "@/utils/Authentificate";
 
 interface AuthenticatedRequest extends NextApiRequest {
   user?: any;
 }
-
-const authenticate = async (req: AuthenticatedRequest, res: NextApiResponse) => {
-  const token = req.headers.authorization?.replace("Bearer ", "");
-  
-  if (!token) {
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    const user = await User.findById(decoded.userId);
-    
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
-    }
-
-    req.user = user;
-    return null;
-  } catch (error) {
-    return res.status(401).json({ message: "Invalid token" });
-  }
-};
 
 export default async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -39,7 +18,7 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
 
   await dbConnect();
 
-  const authError = await authenticate(req, res);
+  const authError = await Authenticate(req, res);
   if (authError) return;
 
   // Check if user has active subscription

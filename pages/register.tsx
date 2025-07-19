@@ -1,31 +1,56 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import Link from 'next/link'
-import { useRouter } from 'next/router'
-import { TrendingUp, Eye, EyeOff, Mail, User, Lock, ArrowRight } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import {
+  TrendingUp,
+  Eye,
+  EyeOff,
+  Mail,
+  User,
+  Lock,
+  ArrowRight,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
-const registerSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string(),
-  agreeToTerms: z.boolean().refine((val) => val === true, 'You must agree to the terms and conditions')
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-})
+const registerSchema = z
+  .object({
+    firstName: z.string().min(2, "First name must be at least 2 characters"),
+    lastName: z.string().min(2, "Last name must be at least 2 characters"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+    agreeToTerms: z
+      .boolean()
+      .refine(
+        (val) => val === true,
+        "You must agree to the terms and conditions"
+      ),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
-type RegisterFormData = z.infer<typeof registerSchema>
+type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function Register() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    // Redirect if user is already logged in
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
 
   const {
     register,
@@ -33,16 +58,16 @@ export default function Register() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-  })
+  });
 
   const onSubmit = async (data: RegisterFormData) => {
-    setIsLoading(true)
-    
+    setIsLoading(true);
+
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           firstName: data.firstName,
@@ -50,32 +75,36 @@ export default function Register() {
           email: data.email,
           password: data.password,
         }),
-      })
+      });
 
       if (response.ok) {
-        const data = await response.json()
+        const data = await response.json();
         // Store token for potential login
         if (data.token) {
-          localStorage.setItem('token', data.token)
+          localStorage.setItem("token", data.token);
         }
-        
+
         if (data.emailSent) {
-          router.push('/login?message=Registration successful! Please check your email to verify your account and start your free trial.')
+          router.push(
+            "/login?message=Registration successful! Please check your email to verify your account and start your free trial."
+          );
         } else {
-          router.push('/resend-verification?message=Account created but verification email failed. Please request a new verification email.')
+          router.push(
+            "/resend-verification?message=Account created but verification email failed. Please request a new verification email."
+          );
         }
       } else {
-        const errorData = await response.json()
-        console.error('Registration failed:', errorData.message)
+        const errorData = await response.json();
+        console.error("Registration failed:", errorData.message);
         // Show error message to user
-        alert(errorData.message || 'Registration failed')
+        toast.error(errorData.message || "Registration failed");
       }
     } catch (error) {
-      console.error('Registration error:', error)
+      console.error("Registration error:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-hero-pattern flex items-center justify-center px-4 py-8">
@@ -93,20 +122,25 @@ export default function Register() {
             </div>
             <span className="text-2xl font-bold gradient-text">HiMonacci</span>
           </Link>
-          
+
           <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-          <p className="text-gray-400 mb-4">Join thousands of successful traders</p>
-          
+          <p className="text-gray-400 mb-4">
+            Join thousands of successful traders
+          </p>
+
           {/* Free Trial Banner */}
           <div className="bg-gradient-to-r from-success-500/20 to-accent-500/20 border border-success-500/30 rounded-xl p-4 mb-6">
             <div className="flex items-center justify-center space-x-2 mb-2">
               <div className="w-6 h-6 bg-success-500 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-bold">!</span>
               </div>
-              <span className="text-success-400 font-semibold">Free 1-Hour Trial</span>
+              <span className="text-success-400 font-semibold">
+                Free 1-Hour Trial
+              </span>
             </div>
             <p className="text-sm text-gray-300 text-center">
-              Get instant access to all premium features after email verification
+              Get instant access to all premium features after email
+              verification
             </p>
             <div className="flex justify-center mt-2 space-x-4 text-xs text-gray-400">
               <span>✓ Real-time signals</span>
@@ -127,13 +161,16 @@ export default function Register() {
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="firstName"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
                   First Name
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
-                    {...register('firstName')}
+                    {...register("firstName")}
                     type="text"
                     id="firstName"
                     className="w-full pl-10 pr-4 py-3 bg-primary-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-secondary-500 focus:ring-2 focus:ring-secondary-500/20 transition-all duration-200"
@@ -141,18 +178,23 @@ export default function Register() {
                   />
                 </div>
                 {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-400">{errors.firstName.message}</p>
+                  <p className="mt-1 text-sm text-red-400">
+                    {errors.firstName.message}
+                  </p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="lastName"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
                   Last Name
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
-                    {...register('lastName')}
+                    {...register("lastName")}
                     type="text"
                     id="lastName"
                     className="w-full pl-10 pr-4 py-3 bg-primary-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-secondary-500 focus:ring-2 focus:ring-secondary-500/20 transition-all duration-200"
@@ -160,20 +202,25 @@ export default function Register() {
                   />
                 </div>
                 {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-400">{errors.lastName.message}</p>
+                  <p className="mt-1 text-sm text-red-400">
+                    {errors.lastName.message}
+                  </p>
                 )}
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Email Address
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
-                  {...register('email')}
+                  {...register("email")}
                   type="email"
                   id="email"
                   className="w-full pl-10 pr-4 py-3 bg-primary-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-secondary-500 focus:ring-2 focus:ring-secondary-500/20 transition-all duration-200"
@@ -181,20 +228,25 @@ export default function Register() {
                 />
               </div>
               {errors.email && (
-                <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-red-400">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
-                  {...register('password')}
-                  type={showPassword ? 'text' : 'password'}
+                  {...register("password")}
+                  type={showPassword ? "text" : "password"}
                   id="password"
                   className="w-full pl-10 pr-12 py-3 bg-primary-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-secondary-500 focus:ring-2 focus:ring-secondary-500/20 transition-all duration-200"
                   placeholder="Enter your password"
@@ -204,24 +256,33 @@ export default function Register() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-400">{errors.password.message}</p>
+                <p className="mt-1 text-sm text-red-400">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
             {/* Confirm Password */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Confirm Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
-                  {...register('confirmPassword')}
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  {...register("confirmPassword")}
+                  type={showConfirmPassword ? "text" : "password"}
                   id="confirmPassword"
                   className="w-full pl-10 pr-12 py-3 bg-primary-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-secondary-500 focus:ring-2 focus:ring-secondary-500/20 transition-all duration-200"
                   placeholder="Confirm your password"
@@ -231,35 +292,49 @@ export default function Register() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-400">{errors.confirmPassword.message}</p>
+                <p className="mt-1 text-sm text-red-400">
+                  {errors.confirmPassword.message}
+                </p>
               )}
             </div>
 
             {/* Terms and Conditions */}
             <div className="flex items-start space-x-3">
               <input
-                {...register('agreeToTerms')}
+                {...register("agreeToTerms")}
                 type="checkbox"
                 id="agreeToTerms"
                 className="w-4 h-4 mt-1 bg-primary-900/50 border border-gray-600 rounded focus:ring-secondary-500 focus:ring-2 text-secondary-500"
               />
               <label htmlFor="agreeToTerms" className="text-sm text-gray-300">
-                I agree to the{' '}
-                <Link href="/terms" className="text-secondary-500 hover:text-secondary-400 transition-colors">
+                I agree to the{" "}
+                <Link
+                  href="/terms"
+                  className="text-secondary-500 hover:text-secondary-400 transition-colors"
+                >
                   Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link href="/privacy" className="text-secondary-500 hover:text-secondary-400 transition-colors">
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/privacy"
+                  className="text-secondary-500 hover:text-secondary-400 transition-colors"
+                >
                   Privacy Policy
                 </Link>
               </label>
             </div>
             {errors.agreeToTerms && (
-              <p className="text-sm text-red-400">{errors.agreeToTerms.message}</p>
+              <p className="text-sm text-red-400">
+                {errors.agreeToTerms.message}
+              </p>
             )}
 
             {/* Submit Button */}
@@ -284,8 +359,11 @@ export default function Register() {
           {/* Login Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-400">
-              Already have an account?{' '}
-              <Link href="/login" className="text-secondary-500 hover:text-secondary-400 transition-colors font-semibold">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="text-secondary-500 hover:text-secondary-400 transition-colors font-semibold"
+              >
                 Sign in
               </Link>
             </p>
@@ -293,5 +371,5 @@ export default function Register() {
         </motion.div>
       </motion.div>
     </div>
-  )
+  );
 }

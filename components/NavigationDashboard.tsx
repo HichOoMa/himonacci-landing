@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { Menu, X, TrendingUp, User, LogOut, ChevronDown, Sparkles, Shield, Zap } from 'lucide-react'
 
-const Navigation = () => {
+const NavigationDashboard = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
@@ -17,13 +17,6 @@ const Navigation = () => {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
-
-  const navItems = [
-    { name: 'How It Works', href: '#how-it-works', icon: Zap },
-    { name: 'Features', href: '#features', icon: Sparkles },
-    { name: 'Pricing', href: '#pricing', icon: Shield },
-    { name: 'FAQ', href: '#faq', icon: null },
-  ]
 
   const handleUserDropdown = () => {
     console.log('Toggle dropdown:', !showUserDropdown)
@@ -73,33 +66,6 @@ const Navigation = () => {
               <span className="text-xs text-secondary-400 font-medium -mt-1 hidden sm:block">Trading Platform</span>
             </div>
           </motion.div>
-
-          {/* Centered Navigation Items */}
-          <div className="flex-1 flex justify-center">
-            <div className="hidden lg:flex items-center space-x-1">
-              {navItems.map((item, index) => (
-                <motion.a
-                  key={item.name}
-                  href={item.href}
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.05 }}
-                  className="relative group px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 hover:bg-secondary-500/10"
-                >
-                  <div className="flex items-center space-x-2">
-                    {item.icon && <item.icon className="w-4 h-4 text-gray-400 group-hover:text-secondary-400 transition-colors" />}
-                    <span className="text-sm lg:text-base text-gray-300 group-hover:text-secondary-400 transition-colors duration-200 font-medium">
-                      {item.name}
-                    </span>
-                  </div>
-                  {/* Animated underline */}
-                  <div className="absolute bottom-0 left-3 lg:left-4 right-3 lg:right-4 h-0.5 bg-gradient-to-r from-secondary-500 to-accent-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
-                </motion.a>
-              ))}
-            </div>
-          </div>
-
           {/* Enhanced User Section */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             {user ? (
@@ -165,43 +131,71 @@ const Navigation = () => {
                       
                       <div className="p-2">
                         {user.subscriptionStatus === 'active' ? (
-                          <Link href="/dashboard">
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-secondary-500/10 transition-colors group"
-                              onClick={() => setShowUserDropdown(false)}
-                            >
-                              <TrendingUp className="w-5 h-5 text-secondary-400 group-hover:text-secondary-300" />
-                              <span className="text-white font-medium">Dashboard</span>
-                            </motion.button>
-                          </Link>
+                          <>
+                            <Link href="/dashboard">
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-secondary-500/10 transition-colors group"
+                                onClick={() => setShowUserDropdown(false)}
+                              >
+                                <TrendingUp className="w-5 h-5 text-secondary-400 group-hover:text-secondary-300" />
+                                <span className="text-white font-medium">Dashboard</span>
+                              </motion.button>
+                            </Link>
+                            <Link href="/positions">
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-success-500/10 transition-colors group"
+                                onClick={() => setShowUserDropdown(false)}
+                              >
+                                <TrendingUp className="w-5 h-5 text-success-400 group-hover:text-success-300" />
+                                <span className="text-white font-medium">Positions</span>
+                              </motion.button>
+                            </Link>
+                            <Link href="/profile">
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-accent-500/10 transition-colors group"
+                                onClick={() => setShowUserDropdown(false)}
+                              >
+                                <User className="w-5 h-5 text-accent-400 group-hover:text-accent-300" />
+                                <span className="text-white font-medium">Profile</span>
+                              </motion.button>
+                            </Link>
+                          </>
                         ) : (
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-accent-500/10 transition-colors group"
-                            onClick={() => {
-                              setShowUserDropdown(false)
-                              document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
-                            }}
-                          >
-                            <Sparkles className="w-5 h-5 text-accent-400 group-hover:text-accent-300" />
-                            <span className="text-white font-medium">Upgrade to Premium</span>
-                          </motion.button>
+                          <>
+                            <Link href="/dashboard">
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-secondary-500/10 transition-colors group"
+                                onClick={() => setShowUserDropdown(false)}
+                              >
+                                <TrendingUp className="w-5 h-5 text-secondary-400 group-hover:text-secondary-300" />
+                                <span className="text-white font-medium">Dashboard</span>
+                              </motion.button>
+                            </Link>
+                            <div className="px-4 py-3 border-t border-gray-700/50 mt-2">
+                              <p className="text-xs text-gray-400 mb-2">Premium Features</p>
+                              <div className="space-y-1">
+                                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                  <User className="w-4 h-4" />
+                                  <span>Profile Dashboard</span>
+                                  <Shield className="w-3 h-3 text-accent-400" />
+                                </div>
+                                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                  <TrendingUp className="w-4 h-4" />
+                                  <span>Positions Analytics</span>
+                                  <Shield className="w-3 h-3 text-accent-400" />
+                                </div>
+                              </div>
+                            </div>
+                          </>
                         )}
-                        
-                        <Link href="/profile">
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-primary-500/10 transition-colors group"
-                            onClick={() => setShowUserDropdown(false)}
-                          >
-                            <User className="w-5 h-5 text-primary-400 group-hover:text-primary-300" />
-                            <span className="text-white font-medium">Profile</span>
-                          </motion.button>
-                        </Link>
                         
                         <motion.button
                           whileHover={{ scale: 1.02 }}
@@ -278,21 +272,6 @@ const Navigation = () => {
               className="md:hidden overflow-hidden bg-primary-900/95 backdrop-blur-xl rounded-2xl mx-2 sm:mx-4 mb-4 border border-secondary-500/20 shadow-2xl"
             >
               <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-                {navItems.map((item, index) => (
-                  <motion.a
-                    key={item.name}
-                    href={item.href}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center space-x-3 text-gray-300 hover:text-secondary-400 transition-colors duration-200 font-medium py-3 px-4 rounded-xl hover:bg-secondary-500/10 group"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {item.icon && <item.icon className="w-5 h-5 text-gray-400 group-hover:text-secondary-400 transition-colors" />}
-                    <span className="text-sm sm:text-base">{item.name}</span>
-                  </motion.a>
-                ))}
-                
                 {/* Mobile menu for authenticated/unauthenticated users */}
                 {user ? (
                   <div className="space-y-3 sm:space-y-4 pt-4 border-t border-gray-700/50">
@@ -315,17 +294,30 @@ const Navigation = () => {
                     </div>
                     
                     {user.subscriptionStatus === 'active' ? (
-                      <Link href="/dashboard">
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-secondary-500 to-accent-500 hover:from-secondary-600 hover:to-accent-600 text-white font-semibold shadow-lg transition-all duration-300"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          <TrendingUp className="w-5 h-5" />
-                          <span className="text-sm sm:text-base">Dashboard</span>
-                        </motion.button>
-                      </Link>
+                      <>
+                        <Link href="/dashboard">
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-secondary-500 to-accent-500 hover:from-secondary-600 hover:to-accent-600 text-white font-semibold shadow-lg transition-all duration-300"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            <TrendingUp className="w-5 h-5" />
+                            <span className="text-sm sm:text-base">Dashboard</span>
+                          </motion.button>
+                        </Link>
+                        <Link href="/positions">
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-success-500 to-success-600 hover:from-success-600 hover:to-success-700 text-white font-semibold shadow-lg transition-all duration-300"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            <Shield className="w-5 h-5" />
+                            <span className="text-sm sm:text-base">Positions</span>
+                          </motion.button>
+                        </Link>
+                      </>
                     ) : (
                       <motion.button
                         whileHover={{ scale: 1.02 }}
@@ -387,4 +379,4 @@ const Navigation = () => {
   )
 }
 
-export default Navigation
+export default NavigationDashboard

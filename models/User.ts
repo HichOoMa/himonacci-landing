@@ -22,6 +22,9 @@ export interface IUser {
     type: 'candle' | 'zone'
     addedAt: Date
   }>
+  binanceApiKey?: string
+  binanceApiSecret?: string
+  isAutoTradingEnabled: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -92,6 +95,18 @@ const userSchema = new mongoose.Schema<IUser>(
       type: { type: String, enum: ['candle', 'zone'], required: true },
       addedAt: { type: Date, default: Date.now },
     }],
+    binanceApiKey: {
+      type: String,
+      select: false, // Don't include in default queries for security
+    },
+    binanceApiSecret: {
+      type: String,
+      select: false, // Don't include in default queries for security
+    },
+    isAutoTradingEnabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
