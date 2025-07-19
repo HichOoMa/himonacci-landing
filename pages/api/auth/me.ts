@@ -43,6 +43,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           hasUsedFreeTrial: userData.hasUsedFreeTrial,
           freeTrialStartDate: userData.freeTrialStartDate,
           freeTrialEndDate: userData.freeTrialEndDate,
+          role: userData.role || 'user',
+          isAutoTradingEnabled: userData.isAutoTradingEnabled,
+          isAutoTradingAllowed: userData.isAutoTradingAllowed,
         },
       })
     } catch (error) {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import { Menu, X, TrendingUp, User, LogOut, ChevronDown, Sparkles, Shield, Zap } from 'lucide-react'
+import { Menu, X, TrendingUp, User, LogOut, ChevronDown, Sparkles, Shield, Zap, Settings } from 'lucide-react'
 
 const NavigationDashboard = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -165,6 +165,23 @@ const NavigationDashboard = () => {
                                 <span className="text-white font-medium">Profile</span>
                               </motion.button>
                             </Link>
+                            {/* Admin Dashboard Link - Only show for admin users */}
+                            {user.role === 'admin' && (
+                              <Link href="/admin">
+                                <motion.button
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-purple-500/10 transition-colors group border border-purple-500/20"
+                                  onClick={() => setShowUserDropdown(false)}
+                                >
+                                  <Settings className="w-5 h-5 text-purple-400 group-hover:text-purple-300" />
+                                  <span className="text-white font-medium">Admin Dashboard</span>
+                                  <div className="ml-auto">
+                                    <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">ADMIN</span>
+                                  </div>
+                                </motion.button>
+                              </Link>
+                            )}
                           </>
                         ) : (
                           <>
@@ -179,6 +196,34 @@ const NavigationDashboard = () => {
                                 <span className="text-white font-medium">Dashboard</span>
                               </motion.button>
                             </Link>
+                            <Link href="/profile">
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-accent-500/10 transition-colors group"
+                                onClick={() => setShowUserDropdown(false)}
+                              >
+                                <User className="w-5 h-5 text-accent-400 group-hover:text-accent-300" />
+                                <span className="text-white font-medium">Profile</span>
+                              </motion.button>
+                            </Link>
+                            {/* Admin Dashboard Link - Non-premium desktop */}
+                            {user.role === 'admin' && (
+                              <Link href="/admin">
+                                <motion.button
+                                  whileHover={{ scale: 1.02 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-purple-500/10 transition-colors group border border-purple-500/20"
+                                  onClick={() => setShowUserDropdown(false)}
+                                >
+                                  <Settings className="w-5 h-5 text-purple-400 group-hover:text-purple-300" />
+                                  <span className="text-white font-medium">Admin Dashboard</span>
+                                  <div className="ml-auto">
+                                    <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">ADMIN</span>
+                                  </div>
+                                </motion.button>
+                              </Link>
+                            )}
                             <div className="px-4 py-3 border-t border-gray-700/50 mt-2">
                               <p className="text-xs text-gray-400 mb-2">Premium Features</p>
                               <div className="space-y-1">
@@ -317,20 +362,52 @@ const NavigationDashboard = () => {
                             <span className="text-sm sm:text-base">Positions</span>
                           </motion.button>
                         </Link>
+                        {/* Admin Dashboard Link - Mobile */}
+                        {user.role === 'admin' && (
+                          <Link href="/admin">
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold shadow-lg transition-all duration-300 border border-purple-400/30"
+                              onClick={() => setIsOpen(false)}
+                            >
+                              <Settings className="w-5 h-5" />
+                              <span className="text-sm sm:text-base">Admin Dashboard</span>
+                              <span className="text-xs bg-purple-300/20 text-purple-100 px-2 py-1 rounded-full ml-auto">ADMIN</span>
+                            </motion.button>
+                          </Link>
+                        )}
                       </>
                     ) : (
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-accent-500 to-secondary-500 hover:from-accent-600 hover:to-secondary-600 text-white font-semibold shadow-lg transition-all duration-300"
-                        onClick={() => {
-                          setIsOpen(false)
-                          document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
-                        }}
-                      >
-                        <Sparkles className="w-5 h-5" />
-                        <span className="text-sm sm:text-base">Upgrade to Premium</span>
-                      </motion.button>
+                      <>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-accent-500 to-secondary-500 hover:from-accent-600 hover:to-secondary-600 text-white font-semibold shadow-lg transition-all duration-300"
+                          onClick={() => {
+                            setIsOpen(false)
+                            document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
+                          }}
+                        >
+                          <Sparkles className="w-5 h-5" />
+                          <span className="text-sm sm:text-base">Upgrade to Premium</span>
+                        </motion.button>
+                        {/* Admin Dashboard Link for non-premium users - Mobile */}
+                        {user.role === 'admin' && (
+                          <Link href="/admin">
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold shadow-lg transition-all duration-300 border border-purple-400/30"
+                              onClick={() => setIsOpen(false)}
+                            >
+                              <Settings className="w-5 h-5" />
+                              <span className="text-sm sm:text-base">Admin Dashboard</span>
+                              <span className="text-xs bg-purple-300/20 text-purple-100 px-2 py-1 rounded-full ml-auto">ADMIN</span>
+                            </motion.button>
+                          </Link>
+                        )}
+                      </>
                     )}
                     
                     <motion.button

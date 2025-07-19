@@ -32,6 +32,20 @@ export default async function POST(req: AuthenticatedRequest, res: NextApiRespon
         .json({ message: "Binance API keys not configured" });
     }
 
+    // Check if user is allowed to enable auto trading
+    if (!user.isAutoTradingAllowed) {
+      return res
+        .status(403)
+        .json({ message: "Auto trading has been disabled by an administrator" });
+    }
+
+    // Prevent users from disabling auto trading once enabled
+    if (user.isAutoTradingEnabled && !enabled) {
+      return res
+        .status(403)
+        .json({ message: "Auto trading cannot be disabled once enabled. Please contact support if needed." });
+    }
+
     // Update auto trading status
     user.isAutoTradingEnabled = enabled;
     await user.save();

@@ -14,6 +14,9 @@ interface User {
   hasUsedFreeTrial: boolean
   freeTrialStartDate?: string
   freeTrialEndDate?: string
+  role: 'user' | 'admin'
+  isAutoTradingEnabled: boolean
+  isAutoTradingAllowed: boolean
 }
 
 interface AuthContextType {

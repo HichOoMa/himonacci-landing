@@ -11,6 +11,7 @@ export interface AuthenticatedRequest extends NextApiRequest {
     email: string
     firstName: string
     lastName: string
+    role: 'user' | 'admin'
   }
 }
 
@@ -41,6 +42,7 @@ export const authenticateToken = async (
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      role: user.role || 'user',
     }
 
     next()

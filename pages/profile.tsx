@@ -56,6 +56,7 @@ interface AccountStats {
     id: string;
     email: string;
     isAutoTradingEnabled: boolean;
+    isAutoTradingAllowed: boolean;
     hasApiKeys: boolean;
     subscriptionStatus: string;
   };
@@ -364,9 +365,14 @@ export default function ProfileDashboard() {
       return;
     }
 
-    // If trying to disable auto trading, show confirmation modal
+    if (!stats?.user?.isAutoTradingAllowed) {
+      toast.error("Auto trading has been disabled by an administrator. Please contact support.");
+      return;
+    }
+
+    // If trying to disable auto trading, show warning that it's not allowed
     if (autoTradingEnabled) {
-      setShowDisableModal(true);
+      toast.error("Auto trading cannot be disabled once enabled. Please contact support if needed.");
       return;
     }
 
@@ -1066,31 +1072,59 @@ export default function ProfileDashboard() {
                         <h4 className="text-md font-semibold text-white">
                           Automated Trading System
                         </h4>
+                        {!stats?.user?.isAutoTradingAllowed && (
+                          <span className="ml-3 px-2 py-1 bg-red-500 text-white text-xs rounded-full">
+                            FORBIDDEN
+                          </span>
+                        )}
+                        {autoTradingEnabled && (
+                          <span className="ml-3 px-2 py-1 bg-green-500 text-white text-xs rounded-full">
+                            ACTIVE
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-gray-300 mb-2">
                         Enable automatic trading based on our signals. We handle
                         all trading decisions, risk management, and position
                         sizing.
                       </p>
-                      <p className="text-xs text-gray-400">
-                        Our system will automatically enter and exit positions
-                        based on our proprietary trading algorithms.
-                      </p>
+                      {!stats?.user?.isAutoTradingAllowed ? (
+                        <p className="text-xs text-red-400 bg-red-900/30 p-2 rounded">
+                          ⚠️ Auto trading has been disabled by an administrator. Please contact support if you need assistance.
+                        </p>
+                      ) : autoTradingEnabled ? (
+                        <p className="text-xs text-yellow-400 bg-yellow-900/30 p-2 rounded">
+                          🔒 Auto trading cannot be disabled once enabled. Contact support if needed.
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400">
+                          Our system will automatically enter and exit positions
+                          based on our proprietary trading algorithms.
+                        </p>
+                      )}
                     </div>
                     <motion.button
                       onClick={handleToggleAutoTrading}
+                      disabled={!stats?.user?.isAutoTradingAllowed || autoTradingEnabled}
                       className={`ml-6 px-8 py-4 rounded-2xl font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${
-                        autoTradingEnabled
-                          ? "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 focus:ring-red-500"
+                        !stats?.user?.isAutoTradingAllowed
+                          ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                          : autoTradingEnabled
+                          ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                           : "bg-gradient-to-r from-success-500 to-success-600 text-white hover:from-success-600 hover:to-success-700 focus:ring-success-500"
                       }`}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={!stats?.user?.isAutoTradingAllowed || autoTradingEnabled ? {} : { scale: 1.05 }}
+                      whileTap={!stats?.user?.isAutoTradingAllowed || autoTradingEnabled ? {} : { scale: 0.95 }}
                     >
-                      {autoTradingEnabled ? (
+                      {!stats?.user?.isAutoTradingAllowed ? (
                         <>
-                          <Pause className="w-6 h-6 mr-2 inline" />
-                          Disable Auto Trading
+                          <XCircle className="w-6 h-6 mr-2 inline" />
+                          Forbidden
+                        </>
+                      ) : autoTradingEnabled ? (
+                        <>
+                          <CheckCircle className="w-6 h-6 mr-2 inline" />
+                          Active
                         </>
                       ) : (
                         <>

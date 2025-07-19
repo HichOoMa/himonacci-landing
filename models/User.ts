@@ -25,6 +25,8 @@ export interface IUser {
   binanceApiKey?: string
   binanceApiSecret?: string
   isAutoTradingEnabled: boolean
+  isAutoTradingAllowed: boolean // Admin can control this
+  role: 'user' | 'admin'
   createdAt: Date
   updatedAt: Date
 }
@@ -106,6 +108,15 @@ const userSchema = new mongoose.Schema<IUser>(
     isAutoTradingEnabled: {
       type: Boolean,
       default: false,
+    },
+    isAutoTradingAllowed: {
+      type: Boolean,
+      default: true, // Allow by default, admin can disable
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
     },
   },
   {
