@@ -60,7 +60,7 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
         isMagic: true,
         status: ValidationDirection.GET_LONG_ENTRY,
         entry: { $in: [2, 3] },
-        expectedProfit: { $gte: 1 },
+        // expectedProfit: { $gte: 1 },
         deleted: false,
       }).lean();
 
@@ -68,7 +68,7 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
       zonesQuery = Zone.find({
         _id: { $in: favoriteZones },
         status: ZoneStatus.ENTRY,
-        expectedProfit: { $gte: 1 },
+        // expectedProfit: { $gte: 1 },
       })
         .populate({
           path: "candle",
@@ -82,14 +82,14 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
         isMagic: true,
         status: ValidationDirection.GET_LONG_ENTRY,
         entry: { $in: [2, 3] },
-        expectedProfit: { $gte: 1 },
+        // expectedProfit: { $gte: 1 },
         updatedAt: { $gte: new Date(oneDayAgo) },
         deleted: false,
       }).lean();
 
       zonesQuery = Zone.find({
         status: ZoneStatus.ENTRY,
-        expectedProfit: { $gte: 1 },
+        // expectedProfit: { $gte: 1 },
         updatedAt: { $gte: new Date(oneDayAgo) },
       })
         .populate({

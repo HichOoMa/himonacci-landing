@@ -1,59 +1,77 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import Link from 'next/link'
-import { useAuth } from '@/contexts/AuthContext'
-import { Menu, X, TrendingUp, User, LogOut, ChevronDown, Sparkles, Shield, Zap } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  Menu,
+  X,
+  TrendingUp,
+  User,
+  LogOut,
+  ChevronDown,
+  Sparkles,
+  Shield,
+  Zap,
+  Settings,
+} from "lucide-react";
 
 const Navigation = () => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-  const [showUserDropdown, setShowUserDropdown] = useState(false)
-  const { user, logout } = useAuth()
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const navItems = [
-    { name: 'How It Works', href: '#how-it-works', icon: Zap },
-    { name: 'Features', href: '#features', icon: Sparkles },
-    { name: 'Pricing', href: '#pricing', icon: Shield },
-    { name: 'FAQ', href: '#faq', icon: null },
-  ]
+    { name: "How It Works", href: "#how-it-works", icon: Zap },
+    { name: "Features", href: "#features", icon: Sparkles },
+    { name: "Pricing", href: "#pricing", icon: Shield },
+    { name: "FAQ", href: "#faq", icon: null },
+  ];
 
   const handleUserDropdown = () => {
-    console.log('Toggle dropdown:', !showUserDropdown)
-    setShowUserDropdown(!showUserDropdown)
-  }
+    console.log("Toggle dropdown:", !showUserDropdown);
+    setShowUserDropdown(!showUserDropdown);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showUserDropdown && !(event.target as Element).closest('.user-dropdown')) {
-        setShowUserDropdown(false)
+      if (
+        showUserDropdown &&
+        !(event.target as Element).closest(".user-dropdown")
+      ) {
+        setShowUserDropdown(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showUserDropdown])
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showUserDropdown]);
 
   return (
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-primary-950/95 backdrop-blur-md shadow-lg' : 'bg-transparent'
+        scrolled
+          ? "bg-primary-950/95 backdrop-blur-md shadow-lg"
+          : "bg-transparent"
       }`}
     >
       {/* Animated gradient line */}
-      <div className={`h-0.5 bg-gradient-to-r from-secondary-500 via-accent-500 to-secondary-500 transition-opacity duration-500 nav-shimmer ${
-        scrolled ? 'opacity-100' : 'opacity-0'
-      }`} />
-      
+      <div
+        className={`h-0.5 bg-gradient-to-r from-secondary-500 via-accent-500 to-secondary-500 transition-opacity duration-500 nav-shimmer ${
+          scrolled ? "opacity-100" : "opacity-0"
+        }`}
+      />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-18 lg:h-20">
           {/* Enhanced Logo */}
@@ -69,8 +87,12 @@ const Navigation = () => {
               <div className="absolute inset-0 bg-gradient-to-br from-secondary-500/50 to-accent-500/50 rounded-xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
             </div>
             <div className="flex flex-col">
-              <span className="text-lg sm:text-xl lg:text-2xl font-bold gradient-text">HiMonacci</span>
-              <span className="text-xs text-secondary-400 font-medium -mt-1 hidden sm:block">Trading Platform</span>
+              <span className="text-lg sm:text-xl lg:text-2xl font-bold gradient-text">
+                HiMonacci
+              </span>
+              <span className="text-xs text-secondary-400 font-medium -mt-1 hidden sm:block">
+                Trading Platform
+              </span>
             </div>
           </motion.div>
 
@@ -88,7 +110,9 @@ const Navigation = () => {
                   className="relative group px-3 lg:px-4 py-2 rounded-lg transition-all duration-300 hover:bg-secondary-500/10"
                 >
                   <div className="flex items-center space-x-2">
-                    {item.icon && <item.icon className="w-4 h-4 text-gray-400 group-hover:text-secondary-400 transition-colors" />}
+                    {item.icon && (
+                      <item.icon className="w-4 h-4 text-gray-400 group-hover:text-secondary-400 transition-colors" />
+                    )}
                     <span className="text-sm lg:text-base text-gray-300 group-hover:text-secondary-400 transition-colors duration-200 font-medium">
                       {item.name}
                     </span>
@@ -118,17 +142,23 @@ const Navigation = () => {
                     <div className="text-white font-medium text-sm">
                       {user.firstName} {user.lastName}
                     </div>
-                    <div className={`text-xs ${
-                      user.subscriptionStatus === 'active' 
-                        ? 'text-success-400' 
-                        : 'text-yellow-400'
-                    }`}>
-                      {user.subscriptionStatus === 'active' ? 'Premium' : 'Free'}
+                    <div
+                      className={`text-xs ${
+                        user.subscriptionStatus === "active"
+                          ? "text-success-400"
+                          : "text-yellow-400"
+                      }`}
+                    >
+                      {user.subscriptionStatus === "active"
+                        ? "Premium"
+                        : "Free"}
                     </div>
                   </div>
-                  <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-400 transition-transform duration-200 ${
-                    showUserDropdown ? 'rotate-180' : ''
-                  }`} />
+                  <ChevronDown
+                    className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-400 transition-transform duration-200 ${
+                      showUserDropdown ? "rotate-180" : ""
+                    }`}
+                  />
                 </motion.button>
 
                 {/* Dropdown menu */}
@@ -151,20 +181,26 @@ const Navigation = () => {
                             <div className="text-white font-semibold text-sm sm:text-base truncate">
                               {user.firstName} {user.lastName}
                             </div>
-                            <div className="text-gray-400 text-xs sm:text-sm truncate">{user.email}</div>
-                            <div className={`text-xs px-2 py-1 rounded-full inline-block mt-1 ${
-                              user.subscriptionStatus === 'active' 
-                                ? 'bg-success-500/20 text-success-400' 
-                                : 'bg-yellow-500/20 text-yellow-400'
-                            }`}>
-                              {user.subscriptionStatus === 'active' ? 'Premium Member' : 'Free Account'}
+                            <div className="text-gray-400 text-xs sm:text-sm truncate">
+                              {user.email}
+                            </div>
+                            <div
+                              className={`text-xs px-2 py-1 rounded-full inline-block mt-1 ${
+                                user.subscriptionStatus === "active"
+                                  ? "bg-success-500/20 text-success-400"
+                                  : "bg-yellow-500/20 text-yellow-400"
+                              }`}
+                            >
+                              {user.subscriptionStatus === "active"
+                                ? "Premium Member"
+                                : "Free Account"}
                             </div>
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="p-2">
-                        {user.subscriptionStatus === 'active' ? (
+                        {user.subscriptionStatus === "active" ? (
                           <Link href="/dashboard">
                             <motion.button
                               whileHover={{ scale: 1.02 }}
@@ -173,7 +209,9 @@ const Navigation = () => {
                               onClick={() => setShowUserDropdown(false)}
                             >
                               <TrendingUp className="w-5 h-5 text-secondary-400 group-hover:text-secondary-300" />
-                              <span className="text-white font-medium">Dashboard</span>
+                              <span className="text-white font-medium">
+                                Dashboard
+                              </span>
                             </motion.button>
                           </Link>
                         ) : (
@@ -182,15 +220,19 @@ const Navigation = () => {
                             whileTap={{ scale: 0.98 }}
                             className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-accent-500/10 transition-colors group"
                             onClick={() => {
-                              setShowUserDropdown(false)
-                              document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
+                              setShowUserDropdown(false);
+                              document
+                                .getElementById("pricing")
+                                ?.scrollIntoView({ behavior: "smooth" });
                             }}
                           >
                             <Sparkles className="w-5 h-5 text-accent-400 group-hover:text-accent-300" />
-                            <span className="text-white font-medium">Upgrade to Premium</span>
+                            <span className="text-white font-medium">
+                              Upgrade to Premium
+                            </span>
                           </motion.button>
                         )}
-                        
+
                         <Link href="/profile">
                           <motion.button
                             whileHover={{ scale: 1.02 }}
@@ -199,16 +241,39 @@ const Navigation = () => {
                             onClick={() => setShowUserDropdown(false)}
                           >
                             <User className="w-5 h-5 text-primary-400 group-hover:text-primary-300" />
-                            <span className="text-white font-medium">Profile</span>
+                            <span className="text-white font-medium">
+                              Profile
+                            </span>
                           </motion.button>
                         </Link>
+
+                        {user.role === "admin" && (
+                          <Link href="/admin">
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-purple-500/10 transition-colors group border border-purple-500/20"
+                              onClick={() => setShowUserDropdown(false)}
+                            >
+                              <Settings className="w-5 h-5 text-purple-400 group-hover:text-purple-300" />
+                              <span className="text-white font-medium">
+                                Admin Dashboard
+                              </span>
+                              <div className="ml-auto">
+                                <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">
+                                  ADMIN
+                                </span>
+                              </div>
+                            </motion.button>
+                          </Link>
+                        )}
                         
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => {
-                            logout()
-                            setShowUserDropdown(false)
+                            logout();
+                            setShowUserDropdown(false);
                           }}
                           className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-red-500/10 transition-colors group"
                         >
@@ -233,7 +298,10 @@ const Navigation = () => {
                 </Link>
                 <Link href="/register">
                   <motion.button
-                    whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(139, 92, 246, 0.3)' }}
+                    whileHover={{
+                      scale: 1.05,
+                      boxShadow: "0 10px 25px rgba(139, 92, 246, 0.3)",
+                    }}
                     whileTap={{ scale: 0.95 }}
                     className="btn-primary px-4 sm:px-8 py-2 sm:py-2.5 rounded-xl text-sm sm:text-base text-white font-semibold shadow-lg shadow-secondary-500/25 hover:shadow-secondary-500/40 transition-all duration-300"
                   >
@@ -272,7 +340,7 @@ const Navigation = () => {
           {isOpen && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
               className="md:hidden overflow-hidden bg-primary-900/95 backdrop-blur-xl rounded-2xl mx-2 sm:mx-4 mb-4 border border-secondary-500/20 shadow-2xl"
@@ -288,11 +356,13 @@ const Navigation = () => {
                     className="flex items-center space-x-3 text-gray-300 hover:text-secondary-400 transition-colors duration-200 font-medium py-3 px-4 rounded-xl hover:bg-secondary-500/10 group"
                     onClick={() => setIsOpen(false)}
                   >
-                    {item.icon && <item.icon className="w-5 h-5 text-gray-400 group-hover:text-secondary-400 transition-colors" />}
+                    {item.icon && (
+                      <item.icon className="w-5 h-5 text-gray-400 group-hover:text-secondary-400 transition-colors" />
+                    )}
                     <span className="text-sm sm:text-base">{item.name}</span>
                   </motion.a>
                 ))}
-                
+
                 {/* Mobile menu for authenticated/unauthenticated users */}
                 {user ? (
                   <div className="space-y-3 sm:space-y-4 pt-4 border-t border-gray-700/50">
@@ -304,17 +374,21 @@ const Navigation = () => {
                         <div className="text-white font-semibold text-sm sm:text-base truncate">
                           {user.firstName} {user.lastName}
                         </div>
-                        <div className={`text-xs sm:text-sm ${
-                          user.subscriptionStatus === 'active' 
-                            ? 'text-success-400' 
-                            : 'text-yellow-400'
-                        }`}>
-                          {user.subscriptionStatus === 'active' ? 'Premium Member' : 'Free Account'}
+                        <div
+                          className={`text-xs sm:text-sm ${
+                            user.subscriptionStatus === "active"
+                              ? "text-success-400"
+                              : "text-yellow-400"
+                          }`}
+                        >
+                          {user.subscriptionStatus === "active"
+                            ? "Premium Member"
+                            : "Free Account"}
                         </div>
                       </div>
                     </div>
-                    
-                    {user.subscriptionStatus === 'active' ? (
+
+                    {user.subscriptionStatus === "active" ? (
                       <Link href="/dashboard">
                         <motion.button
                           whileHover={{ scale: 1.02 }}
@@ -323,7 +397,9 @@ const Navigation = () => {
                           onClick={() => setIsOpen(false)}
                         >
                           <TrendingUp className="w-5 h-5" />
-                          <span className="text-sm sm:text-base">Dashboard</span>
+                          <span className="text-sm sm:text-base">
+                            Dashboard
+                          </span>
                         </motion.button>
                       </Link>
                     ) : (
@@ -332,21 +408,25 @@ const Navigation = () => {
                         whileTap={{ scale: 0.98 }}
                         className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-accent-500 to-secondary-500 hover:from-accent-600 hover:to-secondary-600 text-white font-semibold shadow-lg transition-all duration-300"
                         onClick={() => {
-                          setIsOpen(false)
-                          document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })
+                          setIsOpen(false);
+                          document
+                            .getElementById("pricing")
+                            ?.scrollIntoView({ behavior: "smooth" });
                         }}
                       >
                         <Sparkles className="w-5 h-5" />
-                        <span className="text-sm sm:text-base">Upgrade to Premium</span>
+                        <span className="text-sm sm:text-base">
+                          Upgrade to Premium
+                        </span>
                       </motion.button>
                     )}
-                    
+
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => {
-                        logout()
-                        setIsOpen(false)
+                        logout();
+                        setIsOpen(false);
                       }}
                       className="w-full flex items-center justify-center sm:justify-start space-x-3 px-4 py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors font-medium"
                     >
@@ -384,7 +464,7 @@ const Navigation = () => {
         </AnimatePresence>
       </div>
     </motion.nav>
-  )
-}
+  );
+};
 
-export default Navigation
+export default Navigation;

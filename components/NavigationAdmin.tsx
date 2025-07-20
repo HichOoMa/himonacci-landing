@@ -88,7 +88,7 @@ export default function NavigationAdmin() {
       href: "/admin/users",
       icon: Users,
       description: "User Management",
-      badge: "247",
+      badge: null,
       color: "from-green-500 to-green-600",
     },
     {
@@ -98,6 +98,14 @@ export default function NavigationAdmin() {
       description: "Trading Controls",
       badge: "Live",
       color: "from-orange-500 to-orange-600",
+    },
+    {
+      name: "Trading Settings",
+      href: "/admin/trading-settings",
+      icon: TrendingUp,
+      description: "Trading Configuration",
+      badge: null,
+      color: "from-purple-500 to-purple-600",
     },
     {
       name: "Settings",

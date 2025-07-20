@@ -15,6 +15,18 @@ interface User {
   hasApiKeys: boolean
   createdAt: string
   subscriptionEndDate?: string
+  tradingSettingsId?: string
+  tradingSettings?: {
+    _id: string
+    name: string
+    isDefault: boolean
+  }
+}
+
+interface TradingSettings {
+  _id: string
+  name: string
+  isDefault: boolean
 }
 
 interface Pagination {
@@ -28,6 +40,7 @@ export default function AdminUsersPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
+  const [tradingSettings, setTradingSettings] = useState<TradingSettings[]>([])
   const [pagination, setPagination] = useState<Pagination | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -44,6 +57,7 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (user && user.role === 'admin') {
       fetchUsers()
+      fetchTradingSettings()
     }
   }, [user, currentPage])
 
@@ -76,6 +90,25 @@ export default function AdminUsersPage() {
       setMessage('Error fetching users')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchTradingSettings = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/admin/trading-settings', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setTradingSettings(data.tradingSettings)
+      }
+    } catch (error) {
+      console.error('Error fetching trading settings:', error)
     }
   }
 
@@ -179,6 +212,9 @@ export default function AdminUsersPage() {
                     Auto Trading
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Trading Settings
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     API Keys
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -227,6 +263,18 @@ export default function AdminUsersPage() {
                         }`}>
                           {user.isAutoTradingAllowed ? 'Allowed' : 'Forbidden'}
                         </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-col space-y-1">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          user.tradingSettings?.isDefault ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {user.tradingSettings?.name || 'Default'}
+                        </span>
+                        {user.tradingSettings?.isDefault && (
+                          <span className="text-xs text-gray-500">Default</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -338,6 +386,25 @@ export default function AdminUsersPage() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700">Trading Settings</label>
+                <select
+                  value={editingUser.tradingSettingsId || ''}
+                  onChange={(e) => setEditingUser({
+                    ...editingUser,
+                    tradingSettingsId: e.target.value || undefined
+                  })}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Use Default Settings</option>
+                  {tradingSettings.map((setting) => (
+                    <option key={setting._id} value={setting._id}>
+                      {setting.name} {setting.isDefault ? '(Default)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="flex items-center">
                   <input
                     type="checkbox"
@@ -364,7 +431,8 @@ export default function AdminUsersPage() {
                 onClick={() => updateUser(editingUser._id, {
                   role: editingUser.role,
                   subscriptionStatus: editingUser.subscriptionStatus,
-                  isAutoTradingAllowed: editingUser.isAutoTradingAllowed
+                  isAutoTradingAllowed: editingUser.isAutoTradingAllowed,
+                  tradingSettingsId: editingUser.tradingSettingsId
                 })}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
               >

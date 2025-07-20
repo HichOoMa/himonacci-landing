@@ -196,17 +196,6 @@ const NavigationDashboard = () => {
                                 <span className="text-white font-medium">Dashboard</span>
                               </motion.button>
                             </Link>
-                            <Link href="/profile">
-                              <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left hover:bg-accent-500/10 transition-colors group"
-                                onClick={() => setShowUserDropdown(false)}
-                              >
-                                <User className="w-5 h-5 text-accent-400 group-hover:text-accent-300" />
-                                <span className="text-white font-medium">Profile</span>
-                              </motion.button>
-                            </Link>
                             {/* Admin Dashboard Link - Non-premium desktop */}
                             {user.role === 'admin' && (
                               <Link href="/admin">

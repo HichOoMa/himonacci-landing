@@ -45,6 +45,7 @@ async function getUsers(req: AuthenticatedRequest, res: NextApiResponse) {
 
     const users = await User.find(query)
       .select('-password -binanceApiKey -binanceApiSecret')
+      .populate('tradingSettingsId', 'name isDefault')
       .skip(skip)
       .limit(Number(limit))
       .sort({ createdAt: -1 });
@@ -53,7 +54,8 @@ async function getUsers(req: AuthenticatedRequest, res: NextApiResponse) {
 
     const usersWithStats = users.map(user => ({
       ...user.toObject(),
-      hasApiKeys: !!(user.binanceApiKey && user.binanceApiSecret)
+      hasApiKeys: !!(user.binanceApiKey && user.binanceApiSecret),
+      tradingSettings: user.tradingSettingsId
     }));
 
     res.status(200).json({
@@ -83,7 +85,8 @@ async function updateUser(req: AuthenticatedRequest, res: NextApiResponse) {
       'isAutoTradingAllowed',
       'subscriptionStatus',
       'subscriptionEndDate',
-      'role'
+      'role',
+      'tradingSettingsId'
     ];
 
     const updateData: any = {};
@@ -102,7 +105,9 @@ async function updateUser(req: AuthenticatedRequest, res: NextApiResponse) {
       userId,
       updateData,
       { new: true, runValidators: true }
-    ).select('-password -binanceApiKey -binanceApiSecret');
+    )
+    .select('-password -binanceApiKey -binanceApiSecret')
+    .populate('tradingSettingsId', 'name isDefault');
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -110,7 +115,10 @@ async function updateUser(req: AuthenticatedRequest, res: NextApiResponse) {
 
     res.status(200).json({
       message: "User updated successfully",
-      user: user.toObject()
+      user: {
+        ...user.toObject(),
+        tradingSettings: user.tradingSettingsId
+      }
     });
   } catch (error) {
     console.error("Update user error:", error);
