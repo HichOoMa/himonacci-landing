@@ -25,16 +25,26 @@ import { toast } from 'sonner'
 interface Position {
   id: string
   symbol: string
-  side: 'BUY' | 'SELL'
-  status: string
+  platform: string
+  status: 'OPEN' | 'CLOSED'
+  margin: number
   entryPrice: number
-  currentPrice?: number
+  exitPrice?: number
   quantity: number
-  pnl: number
-  pnlPercentage: number
-  createdAt: string
-  executedAt?: string
+  magicCandle: string
+  limitPrice: number
+  stopLoss?: number
+  takeProfit?: number
+  binanceOrderId?: string
+  buyedAt?: string
   closedAt?: string
+  createdAt: string
+  updatedAt: string
+  // Calculated fields (client-side)
+  side?: 'BUY' | 'SELL'
+  currentPrice?: number
+  pnl?: number
+  pnlPercentage?: number
 }
 
 interface PositionsData {
@@ -42,14 +52,42 @@ interface PositionsData {
   totalCount: number
   activeCount: number
   closedCount: number
-  totalPnl: number
-  winRate: number
-  // Trading statistics
-  totalTrades: number
-  activeTrades: number
-  winningTrades: number
-  losingTrades: number
+  pagination: {
+    page: number
+    limit: number
+    totalCount: number
+    totalPages: number
+  }
 }
+
+// Utility function to calculate PnL
+const calculatePnL = (position: Position, currentPrice?: number): { pnl: number, pnlPercentage: number, side: 'BUY' | 'SELL' } => {
+  // Determine side based on quantity (positive = BUY, negative = SELL)
+  const side: 'BUY' | 'SELL' = position.quantity > 0 ? 'BUY' : 'SELL';
+  
+  let pnl = 0;
+  let pnlPercentage = 0;
+  
+  if (position.status === 'CLOSED' && position.exitPrice) {
+    // Use exit price for closed positions
+    if (side === 'BUY') {
+      pnl = (position.exitPrice - position.entryPrice) * Math.abs(position.quantity);
+    } else {
+      pnl = (position.entryPrice - position.exitPrice) * Math.abs(position.quantity);
+    }
+    pnlPercentage = (pnl / (position.entryPrice * Math.abs(position.quantity))) * 100;
+  } else if (position.status === 'OPEN' && currentPrice) {
+    // Use current price for open positions
+    if (side === 'BUY') {
+      pnl = (currentPrice - position.entryPrice) * Math.abs(position.quantity);
+    } else {
+      pnl = (position.entryPrice - currentPrice) * Math.abs(position.quantity);
+    }
+    pnlPercentage = (pnl / (position.entryPrice * Math.abs(position.quantity))) * 100;
+  }
+  
+  return { pnl, pnlPercentage, side };
+};
 
 export default function PositionsPage() {
   const { user } = useAuth()
@@ -61,6 +99,39 @@ export default function PositionsPage() {
   const [sortBy, setSortBy] = useState<'date' | 'pnl' | 'symbol'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Calculate statistics from positions
+  const calculateStatistics = (positionsData: Position[]) => {
+    const totalTrades = positionsData.length;
+    const activeTrades = positionsData.filter(p => p.status === 'OPEN').length;
+    const closedTrades = positionsData.filter(p => p.status === 'CLOSED').length;
+    
+    let totalPnl = 0;
+    let winningTrades = 0;
+    let losingTrades = 0;
+    
+    positionsData.forEach(position => {
+      const { pnl } = calculatePnL(position);
+      totalPnl += pnl;
+      
+      if (position.status === 'CLOSED') {
+        if (pnl > 0) winningTrades++;
+        else if (pnl < 0) losingTrades++;
+      }
+    });
+    
+    const winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0;
+    
+    return {
+      totalTrades,
+      activeTrades,
+      closedTrades,
+      totalPnl,
+      winningTrades,
+      losingTrades,
+      winRate
+    };
+  };
 
   useEffect(() => {
     if (!user) {
@@ -97,15 +168,28 @@ export default function PositionsPage() {
     }
   }
 
-  const filteredPositions = positions?.positions?.filter(position => {
+  // Enhanced positions with calculated PnL
+  const enhancedPositions = positions?.positions?.map(position => {
+    const { pnl, pnlPercentage, side } = calculatePnL(position);
+    return {
+      ...position,
+      pnl,
+      pnlPercentage,
+      side
+    };
+  }) || [];
+
+  const statistics = calculateStatistics(enhancedPositions);
+
+  const filteredPositions = enhancedPositions.filter(position => {
     const matchesFilter = filter === 'all' || 
       (filter === 'active' && position.status === 'OPEN') ||
-      (filter === 'closed' && position.status !== 'OPEN')
+      (filter === 'closed' && position.status === 'CLOSED')
     
     const matchesSearch = position.symbol.toLowerCase().includes(searchTerm.toLowerCase())
     
     return matchesFilter && matchesSearch
-  }) || []
+  });
 
   const sortedPositions = [...filteredPositions].sort((a, b) => {
     let aValue: any, bValue: any
@@ -133,7 +217,7 @@ export default function PositionsPage() {
     } else {
       return aValue > bValue ? -1 : aValue < bValue ? 1 : 0
     }
-  })
+  });
 
   if (loading) {
     return (
@@ -241,8 +325,8 @@ export default function PositionsPage() {
               { label: 'Total Positions', value: positions?.totalCount || 0, icon: Activity, color: 'text-white' },
               { label: 'Active Positions', value: positions?.activeCount || 0, icon: Play, color: 'text-secondary-400' },
               { label: 'Closed Positions', value: positions?.closedCount || 0, icon: Pause, color: 'text-gray-400' },
-              { label: 'Win Rate', value: `${positions?.winRate?.toFixed(1) || '0.0'}%`, icon: Target, color: 'text-accent-400' },
-              { label: 'Total P&L', value: `$${positions?.totalPnl?.toFixed(2) || '0.00'}`, icon: DollarSign, color: (positions?.totalPnl || 0) >= 0 ? 'text-success-400' : 'text-red-400' }
+              { label: 'Win Rate', value: `${statistics.winRate.toFixed(1)}%`, icon: Target, color: 'text-accent-400' },
+              { label: 'Total P&L', value: `$${statistics.totalPnl.toFixed(2)}`, icon: DollarSign, color: statistics.totalPnl >= 0 ? 'text-success-400' : 'text-red-400' }
             ].map((stat, index) => (
               <motion.div 
                 key={index}
@@ -281,11 +365,11 @@ export default function PositionsPage() {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 {[
-                  { label: 'Total Trades', value: positions?.totalTrades || 0, icon: Activity, color: 'text-white' },
-                  { label: 'Active Trades', value: positions?.activeTrades || 0, icon: Play, color: 'text-secondary-400' },
-                  { label: 'Winning Trades', value: positions?.winningTrades || 0, icon: TrendingUp, color: 'text-success-400' },
-                  { label: 'Losing Trades', value: positions?.losingTrades || 0, icon: TrendingDown, color: 'text-red-400' },
-                  { label: 'Success Rate', value: `${positions?.winRate?.toFixed(1) || '0.0'}%`, icon: Target, color: 'text-accent-400' }
+                  { label: 'Total Trades', value: statistics.totalTrades, icon: Activity, color: 'text-white' },
+                  { label: 'Active Trades', value: statistics.activeTrades, icon: Play, color: 'text-secondary-400' },
+                  { label: 'Winning Trades', value: statistics.winningTrades, icon: TrendingUp, color: 'text-success-400' },
+                  { label: 'Losing Trades', value: statistics.losingTrades, icon: TrendingDown, color: 'text-red-400' },
+                  { label: 'Success Rate', value: `${statistics.winRate.toFixed(1)}%`, icon: Target, color: 'text-accent-400' }
                 ].map((stat, index) => (
                   <motion.div 
                     key={index}
@@ -378,11 +462,11 @@ export default function PositionsPage() {
                     Trading Positions ({sortedPositions.length})
                   </h3>
                 </div>
-                {positions?.winRate && (
+                {statistics.winRate > 0 && (
                   <div className="flex items-center space-x-2">
                     <Target className="w-5 h-5 text-accent-400" />
                     <span className="text-accent-400 font-medium">
-                      Win Rate: {positions.winRate.toFixed(1)}%
+                      Win Rate: {statistics.winRate.toFixed(1)}%
                     </span>
                   </div>
                 )}

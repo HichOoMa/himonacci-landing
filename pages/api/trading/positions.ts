@@ -35,8 +35,56 @@ export default async function handler(
 
     const totalCount = await Position.countDocuments(filter);
 
+    // Clean positions data and remove undefined properties
+    const cleanedPositions = positions.map((position: any) => {
+      const cleanedPosition: any = {
+        id: position._id?.toString() || position.id,
+        userId: position.userId?.toString(),
+        symbol: position.symbol,
+        platform: position.platform,
+        status: position.status,
+        margin: position.margin,
+        entryPrice: position.entryPrice,
+        quantity: position.quantity,
+        magicCandle: position.magicCandle?.toString(),
+        limitPrice: position.limitPrice,
+        createdAt: position.createdAt,
+        updatedAt: position.updatedAt,
+      };
+
+      // Only include optional fields if they have values
+      if (position.exitPrice !== undefined && position.exitPrice !== null) {
+        cleanedPosition.exitPrice = position.exitPrice;
+      }
+      if (position.stopLoss !== undefined && position.stopLoss !== null) {
+        cleanedPosition.stopLoss = position.stopLoss;
+      }
+      if (position.takeProfit !== undefined && position.takeProfit !== null) {
+        cleanedPosition.takeProfit = position.takeProfit;
+      }
+      if (position.binanceOrderId) {
+        cleanedPosition.binanceOrderId = position.binanceOrderId;
+      }
+      if (position.buyedAt) {
+        cleanedPosition.buyedAt = position.buyedAt;
+      }
+      if (position.closedAt) {
+        cleanedPosition.closedAt = position.closedAt;
+      }
+
+      return cleanedPosition;
+    });
+
+    // Calculate statistics for the response
+    const totalPositions = totalCount;
+    const activePositions = positions.filter(p => p.status === 'OPEN').length;
+    const closedPositions = positions.filter(p => p.status === 'CLOSED').length;
+
     res.status(200).json({
-      positions: positions,
+      positions: cleanedPositions,
+      totalCount: totalPositions,
+      activeCount: activePositions,
+      closedCount: closedPositions,
       pagination: {
         page: Number(page),
         limit: Number(limit),
