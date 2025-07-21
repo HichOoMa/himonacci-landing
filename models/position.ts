@@ -32,9 +32,6 @@ const positionSchema = new Schema<IPosition>({
   quantity: { type: Number, required: true },
   magicCandle: { type: Schema.Types.ObjectId, ref: "Candle", required: true },
   limitPrice: { type: Number, required: true },
-  stopLoss: { type: Number },
-  takeProfit: { type: Number },
-  binanceOrderId: { type: String },
   buyedAt: { type: Date },
   closedAt: { type: Date },
 }, { timestamps: true})

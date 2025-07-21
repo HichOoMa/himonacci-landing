@@ -30,10 +30,56 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
           apiSecret: user.binanceApiSecret
         })
 
-        const response = await client.accountInfo()
+        const [accountResponse, pricesResponse] = await Promise.all([
+          client.accountInfo(),
+          client.prices()
+        ])
 
-        if (response) {
-          binanceAccount = response;
+        if (accountResponse && pricesResponse) {
+          // Calculate total wallet balance in USDT
+          let totalWalletBalanceUSDT = 0
+          const balancesWithUSDT = accountResponse.balances?.map((balance: any) => {
+            const asset = balance.asset
+            const totalBalance = parseFloat(balance.free) + parseFloat(balance.locked)
+            
+            if (totalBalance === 0) return null
+            
+            let usdtValue = 0
+            
+            if (asset === 'USDT') {
+              usdtValue = totalBalance
+            } else if (asset === 'BUSD' || asset === 'FDUSD') {
+              // Stable coins approximately equal to USDT
+              usdtValue = totalBalance
+            } else {
+              // Try to get price against USDT
+              const symbolPrice = pricesResponse[`${asset}USDT`]
+              if (symbolPrice) {
+                usdtValue = totalBalance * parseFloat(symbolPrice)
+              } else {
+                // If no direct USDT pair, try BTC pair and convert through BTC
+                const btcPrice = pricesResponse[`${asset}BTC`]
+                const btcUsdtPrice = pricesResponse['BTCUSDT']
+                if (btcPrice && btcUsdtPrice) {
+                  usdtValue = totalBalance * parseFloat(btcPrice) * parseFloat(btcUsdtPrice)
+                }
+              }
+            }
+            
+            totalWalletBalanceUSDT += usdtValue
+            
+            return {
+              ...balance,
+              totalBalance: totalBalance.toFixed(8),
+              usdtValue: usdtValue.toFixed(2)
+            }
+          }).filter(Boolean) || []
+
+          binanceAccount = {
+            ...accountResponse,
+            balances: balancesWithUSDT,
+            totalWalletBalanceUSDT: totalWalletBalanceUSDT.toFixed(2)
+          }
         } else {
           binanceError = 'Failed to fetch Binance account data'
         }
@@ -42,7 +88,6 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
         binanceError = 'Error connecting to Binance API'
       }
     }
-
     // Get trading statistics
     const positions = await Position.find({ userId: user._id })
     const activePositions = positions.filter(p => p.status === 'OPEN')
@@ -56,11 +101,10 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
     const totalPnl = closedPositions.reduce((sum, p) => sum + (p.pnl || 0), 0)
     const winRate = closedPositions.length > 0 ? (winningTrades / closedPositions.length) * 100 : 0
 
-    // Get recent positions
+
     const recentPositions = await Position.find({ userId: user._id })
       .sort({ createdAt: -1 })
       .limit(10)
-      .populate('magicCandle')
     const stats = {
       user: {
         id: user._id,
@@ -74,8 +118,8 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
         accountType: binanceAccount.accountType,
         canTrade: binanceAccount.canTrade,
         canDeposit: binanceAccount.canDeposit,
-        balances: binanceAccount.balances?.filter((b: any) => parseFloat(b.free) > 0 || parseFloat(b.locked) > 0) || [],
-        totalWalletBalance: binanceAccount.balances?.reduce((sum: number, b: any) => sum + parseFloat(b.free) + parseFloat(b.locked), 0).toFixed(2)
+        balances: binanceAccount.balances?.filter((b: any) => parseFloat(b.totalBalance) > 0) || [],
+        totalWalletBalanceUSDT: binanceAccount.totalWalletBalanceUSDT
       } : null,
       binanceError,
       trading: {
@@ -94,8 +138,6 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
         entryPrice: position.entryPrice,
         currentPrice: position.currentPrice,
         quantity: position.quantity,
-        pnl: position.pnl,
-        pnlPercentage: position.pnlPercentage,
         createdAt: position.createdAt,
         executedAt: position.executedAt,
         closedAt: position.closedAt,
