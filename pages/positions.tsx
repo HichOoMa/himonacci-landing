@@ -26,12 +26,13 @@ interface Position {
   id: string
   symbol: string
   platform: string
-  status: 'OPEN' | 'CLOSED'
+  status: string // Will be normalized to uppercase
   margin: number
   entryPrice: number
   exitPrice?: number
-  quantity: number
+  quantity?: number
   magicCandle: string
+  signalType?: string
   limitPrice: number
   stopLoss?: number
   takeProfit?: number
@@ -62,28 +63,34 @@ interface PositionsData {
 
 // Utility function to calculate PnL
 const calculatePnL = (position: Position, currentPrice?: number): { pnl: number, pnlPercentage: number, side: 'BUY' | 'SELL' } => {
-  // Determine side based on quantity (positive = BUY, negative = SELL)
-  const side: 'BUY' | 'SELL' = position.quantity > 0 ? 'BUY' : 'SELL';
+  // Default to BUY since quantity might not be available
+  // In trading signals, we typically assume BUY positions unless specified otherwise
+  const side: 'BUY' | 'SELL' = 'BUY';
+  
+  // Default quantity to 1 if not provided (for percentage calculations)
+  const quantity = position.quantity || 1;
   
   let pnl = 0;
   let pnlPercentage = 0;
   
-  if (position.status === 'CLOSED' && position.exitPrice) {
+  const normalizedStatus = position.status.toUpperCase();
+  
+  if (normalizedStatus === 'CLOSED' && position.exitPrice) {
     // Use exit price for closed positions
     if (side === 'BUY') {
-      pnl = (position.exitPrice - position.entryPrice) * Math.abs(position.quantity);
+      pnl = (position.exitPrice - position.entryPrice) * Math.abs(quantity);
     } else {
-      pnl = (position.entryPrice - position.exitPrice) * Math.abs(position.quantity);
+      pnl = (position.entryPrice - position.exitPrice) * Math.abs(quantity);
     }
-    pnlPercentage = (pnl / (position.entryPrice * Math.abs(position.quantity))) * 100;
-  } else if (position.status === 'OPEN' && currentPrice) {
+    pnlPercentage = (pnl / (position.entryPrice * Math.abs(quantity))) * 100;
+  } else if (normalizedStatus === 'OPEN' && currentPrice) {
     // Use current price for open positions
     if (side === 'BUY') {
-      pnl = (currentPrice - position.entryPrice) * Math.abs(position.quantity);
+      pnl = (currentPrice - position.entryPrice) * Math.abs(quantity);
     } else {
-      pnl = (position.entryPrice - currentPrice) * Math.abs(position.quantity);
+      pnl = (position.entryPrice - currentPrice) * Math.abs(quantity);
     }
-    pnlPercentage = (pnl / (position.entryPrice * Math.abs(position.quantity))) * 100;
+    pnlPercentage = (pnl / (position.entryPrice * Math.abs(quantity))) * 100;
   }
   
   return { pnl, pnlPercentage, side };
@@ -103,8 +110,8 @@ export default function PositionsPage() {
   // Calculate statistics from positions
   const calculateStatistics = (positionsData: Position[]) => {
     const totalTrades = positionsData.length;
-    const activeTrades = positionsData.filter(p => p.status === 'OPEN').length;
-    const closedTrades = positionsData.filter(p => p.status === 'CLOSED').length;
+    const activeTrades = positionsData.filter(p => p.status.toUpperCase() === 'OPEN').length;
+    const closedTrades = positionsData.filter(p => p.status.toUpperCase() === 'CLOSED').length;
     
     let totalPnl = 0;
     let winningTrades = 0;
@@ -114,7 +121,7 @@ export default function PositionsPage() {
       const { pnl } = calculatePnL(position);
       totalPnl += pnl;
       
-      if (position.status === 'CLOSED') {
+      if (position.status.toUpperCase() === 'CLOSED') {
         if (pnl > 0) winningTrades++;
         else if (pnl < 0) losingTrades++;
       }
@@ -155,7 +162,21 @@ export default function PositionsPage() {
       
       if (response.ok) {
         const data = await response.json()
-        setPositions(data)
+        
+        // Normalize the positions data to handle API response format
+        const normalizedData = {
+          ...data,
+          positions: data.positions?.map((pos: any) => ({
+            ...pos,
+            id: pos.id || pos._id, // Handle both id and _id
+            status: pos.status.toUpperCase(), // Normalize status to uppercase
+            quantity: pos.quantity || 1, // Default quantity if missing
+            createdAt: pos.createdAt || pos.buyedAt, // Use buyedAt as fallback for createdAt
+            updatedAt: pos.updatedAt || pos.createdAt || pos.buyedAt
+          })) || []
+        }
+        
+        setPositions(normalizedData)
       } else {
         toast.error('Failed to fetch positions')
       }
@@ -182,9 +203,10 @@ export default function PositionsPage() {
   const statistics = calculateStatistics(enhancedPositions);
 
   const filteredPositions = enhancedPositions.filter(position => {
+    const normalizedStatus = position.status.toUpperCase();
     const matchesFilter = filter === 'all' || 
-      (filter === 'active' && position.status === 'OPEN') ||
-      (filter === 'closed' && position.status === 'CLOSED')
+      (filter === 'active' && normalizedStatus === 'OPEN') ||
+      (filter === 'closed' && normalizedStatus === 'CLOSED')
     
     const matchesSearch = position.symbol.toLowerCase().includes(searchTerm.toLowerCase())
     
@@ -534,10 +556,10 @@ export default function PositionsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            position.status === 'OPEN' ? 'bg-secondary-500/20 text-secondary-400' : 'bg-gray-500/20 text-gray-400'
+                            position.status.toUpperCase() === 'OPEN' ? 'bg-secondary-500/20 text-secondary-400' : 'bg-gray-500/20 text-gray-400'
                           }`}>
-                            {position.status === 'OPEN' ? <Play className="w-3 h-3 mr-1" /> : <Pause className="w-3 h-3 mr-1" />}
-                            {position.status}
+                            {position.status.toUpperCase() === 'OPEN' ? <Play className="w-3 h-3 mr-1" /> : <Pause className="w-3 h-3 mr-1" />}
+                            {position.status.toUpperCase()}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
@@ -547,7 +569,7 @@ export default function PositionsPage() {
                           {position.currentPrice ? `$${position.currentPrice.toFixed(4)}` : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                          {position.quantity}
+                          {position.quantity || 1}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`text-sm font-medium ${

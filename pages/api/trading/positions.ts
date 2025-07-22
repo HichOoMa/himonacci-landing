@@ -47,6 +47,7 @@ export default async function handler(
         entryPrice: position.entryPrice,
         quantity: position.quantity,
         magicCandle: position.magicCandle?.toString(),
+        signalType: position.signalType,
         limitPrice: position.limitPrice,
         createdAt: position.createdAt,
         updatedAt: position.updatedAt,
@@ -77,8 +78,8 @@ export default async function handler(
 
     // Calculate statistics for the response
     const totalPositions = totalCount;
-    const activePositions = positions.filter(p => p.status === 'OPEN').length;
-    const closedPositions = positions.filter(p => p.status === 'CLOSED').length;
+    const activePositions = positions.filter(p => p.status?.toLowerCase() === 'open').length;
+    const closedPositions = positions.filter(p => p.status?.toLowerCase() === 'closed').length;
 
     res.status(200).json({
       positions: cleanedPositions,
