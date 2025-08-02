@@ -1,9 +1,7 @@
 export const apps = [
   {
     name: 'dashboard',
-    script: 'npm',
-    args: 'run build && npm start',
-    cwd: '/home/hichoma/Dev/hammem/dashboard',
+    script: 'npm run build && npm start',
     instances: 1,
     autorestart: true,
     watch: false,
