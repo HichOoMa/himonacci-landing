@@ -1,6 +1,6 @@
 export const apps = [
   {
-    name: 'himonacci-dashboard',
+    name: 'dashboard',
     script: 'npm',
     args: 'run build && npm start',
     cwd: '/home/hichoma/Dev/hammem/dashboard',
