@@ -890,7 +890,7 @@ export default function ProfileDashboard() {
                         {
                           step: 5,
                           text: "Add our IP address to the whitelist",
-                          ip: "52.15.156.23",
+                          ip: process.env.NEXT_PUBLIC_SERVER_IP || "52.15.156.23",
                         },
                         { step: 6, text: "Complete the verification process" },
                         { step: 7, text: "Copy your API Key and Secret Key" },
