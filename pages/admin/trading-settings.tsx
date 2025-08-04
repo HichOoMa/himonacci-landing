@@ -32,6 +32,7 @@ interface TradingSettings {
   periodDuration: number
   positionsPerPeriod: number
   reservedPeriodsBalance: number
+  balancePartitions: number
   closeAllCheckPeriod: number
   closeAllProfitThreshold: number
   minExpectedProfit: number
@@ -46,6 +47,7 @@ interface FormData {
   periodDuration: number
   positionsPerPeriod: number
   reservedPeriodsBalance: number
+  balancePartitions: number
   closeAllCheckPeriod: number
   closeAllProfitThreshold: number
   minExpectedProfit: number
@@ -67,6 +69,7 @@ export default function TradingSettingsAdmin() {
     periodDuration: 60,
     positionsPerPeriod: 5,
     reservedPeriodsBalance: 2,
+    balancePartitions: 10,
     closeAllCheckPeriod: 7,
     closeAllProfitThreshold: 4,
     minExpectedProfit: 5,
@@ -143,6 +146,7 @@ export default function TradingSettingsAdmin() {
       periodDuration: settings.periodDuration,
       positionsPerPeriod: settings.positionsPerPeriod,
       reservedPeriodsBalance: settings.reservedPeriodsBalance,
+      balancePartitions: settings.balancePartitions,
       closeAllCheckPeriod: settings.closeAllCheckPeriod,
       closeAllProfitThreshold: settings.closeAllProfitThreshold,
       minExpectedProfit: settings.minExpectedProfit,
@@ -185,6 +189,7 @@ export default function TradingSettingsAdmin() {
       periodDuration: 60,
       positionsPerPeriod: 5,
       reservedPeriodsBalance: 1000,
+      balancePartitions: 10,
       closeAllCheckPeriod: 30,
       closeAllProfitThreshold: 100,
       minExpectedProfit: 5,
@@ -223,6 +228,7 @@ export default function TradingSettingsAdmin() {
       periodDuration: settings.periodDuration,
       positionsPerPeriod: settings.positionsPerPeriod,
       reservedPeriodsBalance: settings.reservedPeriodsBalance,
+      balancePartitions: settings.balancePartitions,
       closeAllCheckPeriod: settings.closeAllCheckPeriod,
       closeAllProfitThreshold: settings.closeAllProfitThreshold,
       minExpectedProfit: settings.minExpectedProfit,
@@ -460,6 +466,25 @@ export default function TradingSettingsAdmin() {
                           </span>
                         </div>
                       </div>
+
+                      <div className="space-y-3">
+                        <label className="block text-sm font-semibold text-gray-700">
+                          Balance Partitions
+                        </label>
+                        <div className="relative">
+                          <ArrowUpDown className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                          <input
+                            type="number"
+                            value={formData.balancePartitions}
+                            onChange={(e) => setFormData({ ...formData, balancePartitions: parseInt(e.target.value) })}
+                            className="w-full pl-12 pr-4 py-3 text-foreground bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                            min="1"
+                            max="100"
+                            required
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500">Number of balance partitions for risk distribution</p>
+                      </div>
                     </div>
 
                     <div className="space-y-3">
@@ -653,6 +678,14 @@ export default function TradingSettingsAdmin() {
                           <span className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Balance</span>
                         </div>
                         <p className="text-lg font-bold text-gray-900">{settings.reservedPeriodsBalance.toLocaleString()}</p>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-100">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ArrowUpDown className="w-4 h-4 text-indigo-600" />
+                          <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Partitions</span>
+                        </div>
+                        <p className="text-lg font-bold text-gray-900">{settings.balancePartitions}</p>
                       </div>
                       
                       <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-4 border border-orange-100">

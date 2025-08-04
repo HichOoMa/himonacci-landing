@@ -6,6 +6,7 @@ export interface IUser {
   firstName: string
   lastName: string
   email: string
+  normalizedEmail: string // Lowercase and trimmed email for uniqueness
   password: string
   isVerified: boolean
   emailVerificationToken?: string
@@ -52,6 +53,13 @@ const userSchema = new mongoose.Schema<IUser>(
       unique: true,
       lowercase: true,
       trim: true,
+      match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email'],
+    },
+    normalizedEmail: {
+      type: String,
+      lowercase: true,
+      trim: true,
+      unique: true,
       match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email'],
     },
     password: {

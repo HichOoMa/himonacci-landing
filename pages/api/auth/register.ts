@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const normalizedEmail = normalizeEmail(email)
 
     // Check if user already exists with normalized email
-    const existingUser = await User.findOne({ email: normalizedEmail })
+    const existingUser = await User.findOne({ normalizedEmail: normalizedEmail })
     if (existingUser) {
       return res.status(400).json({ message: 'An account with this email already exists' })
     }
@@ -45,7 +45,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const user = new User({
       firstName,
       lastName,
-      email: normalizedEmail,
+      email,
+      normalizedEmail: normalizedEmail,
       password,
       isVerified: false,
       emailVerificationToken: verificationToken,

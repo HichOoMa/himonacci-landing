@@ -7,6 +7,7 @@ export interface ITradingSettings {
   periodDuration: number // Duration in minutes
   positionsPerPeriod: number
   reservedPeriodsBalance: number
+  balancePartitions: number // Number of balance partitions
   closeAllCheckPeriod: number // Duration in minutes
   closeAllProfitThreshold: number
   minExpectedProfit: number // Minimum expected profit percentage
@@ -41,6 +42,12 @@ const tradingSettingsSchema = new mongoose.Schema<ITradingSettings>(
       type: Number,
       required: [true, 'Reserved periods balance is required'],
       min: [0, 'Reserved periods balance must be non-negative'],
+    },
+    balancePartitions: {
+      type: Number,
+      required: [true, 'Balance partitions is required'],
+      min: [1, 'Balance partitions must be at least 1'],
+      max: [100, 'Balance partitions must not exceed 100'],
     },
     closeAllCheckPeriod: {
       type: Number,

@@ -60,6 +60,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       periodDuration,
       positionsPerPeriod,
       reservedPeriodsBalance,
+      balancePartitions,
       closeAllCheckPeriod,
       closeAllProfitThreshold,
       minExpectedProfit,
@@ -68,9 +69,9 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
 
     // Validate required fields
     if (!name || !periodDuration || !positionsPerPeriod || 
-        reservedPeriodsBalance === undefined || !closeAllCheckPeriod || 
-        closeAllProfitThreshold === undefined || minExpectedProfit === undefined || 
-        minVolume === undefined) {
+        reservedPeriodsBalance === undefined || balancePartitions === undefined ||
+        !closeAllCheckPeriod || closeAllProfitThreshold === undefined || 
+        minExpectedProfit === undefined || minVolume === undefined) {
       return res.status(400).json({ message: 'All fields are required' })
     }
 
@@ -80,6 +81,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       periodDuration,
       positionsPerPeriod,
       reservedPeriodsBalance,
+      balancePartitions,
       closeAllCheckPeriod,
       closeAllProfitThreshold,
       minExpectedProfit,
@@ -115,6 +117,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse) {
       periodDuration,
       positionsPerPeriod,
       reservedPeriodsBalance,
+      balancePartitions,
       closeAllCheckPeriod,
       closeAllProfitThreshold,
       minExpectedProfit,
@@ -140,6 +143,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse) {
     tradingSettings.periodDuration = periodDuration || tradingSettings.periodDuration
     tradingSettings.positionsPerPeriod = positionsPerPeriod || tradingSettings.positionsPerPeriod
     tradingSettings.reservedPeriodsBalance = reservedPeriodsBalance !== undefined ? reservedPeriodsBalance : tradingSettings.reservedPeriodsBalance
+    tradingSettings.balancePartitions = balancePartitions !== undefined ? balancePartitions : tradingSettings.balancePartitions
     tradingSettings.closeAllCheckPeriod = closeAllCheckPeriod || tradingSettings.closeAllCheckPeriod
     tradingSettings.closeAllProfitThreshold = closeAllProfitThreshold !== undefined ? closeAllProfitThreshold : tradingSettings.closeAllProfitThreshold
     tradingSettings.minExpectedProfit = minExpectedProfit !== undefined ? minExpectedProfit : tradingSettings.minExpectedProfit
