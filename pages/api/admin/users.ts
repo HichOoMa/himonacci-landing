@@ -1,6 +1,7 @@
 import { NextApiResponse } from "next";
 import User from "@/models/User";
 import Authenticate, { AuthenticatedRequest } from "@/utils/Authentificate";
+import SubscriptionManager from "@/lib/subscriptionManager";
 
 export default async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   try {
@@ -99,6 +100,32 @@ async function updateUser(req: AuthenticatedRequest, res: NextApiResponse) {
     // If disabling auto trading permission and user has it enabled, disable it
     if (updates.isAutoTradingAllowed === false) {
       updateData.isAutoTradingEnabled = false;
+    }
+
+    // If updating subscription status to 'active', create a subscription
+    if (updates.subscriptionStatus === 'active') {
+      try {
+        // Create a 30-day subscription with amount 0
+        const paymentData = {
+          transactionHash: `admin-created-${Date.now()}`,
+          amount: 0,
+          network: 'ADMIN',
+          paymentDate: new Date(),
+          status: 'confirmed',
+          verificationMethod: 'admin_manual'
+        };
+
+        await SubscriptionManager.createSubscription(userId, paymentData);
+        
+        // Update subscription dates in the user update
+        const startDate = new Date();
+        const endDate = new Date(startDate.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days
+        updateData.subscriptionStartDate = startDate;
+        updateData.subscriptionEndDate = endDate;
+      } catch (subscriptionError) {
+        console.error("Error creating subscription:", subscriptionError);
+        return res.status(500).json({ message: "Error creating subscription for user" });
+      }
     }
 
     const user = await User.findByIdAndUpdate(

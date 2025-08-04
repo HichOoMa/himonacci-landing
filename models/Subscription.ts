@@ -12,10 +12,10 @@ export interface ISubscription {
   paymentHistory: {
     transactionHash: string
     amount: number
-    network: string
+    network: 'TRC20' | 'ERC20' | 'BEP20' | 'ADMIN'
     paymentDate: Date
     status: 'confirmed' | 'pending' | 'failed'
-    verificationMethod: string
+    verificationMethod: 'transaction_id' | 'address_scan' | 'admin_manual'
   }[]
   autoRenewal: boolean
   cancellationDate?: Date
@@ -72,7 +72,7 @@ const subscriptionSchema = new mongoose.Schema<ISubscription>(
       network: {
         type: String,
         required: true,
-        enum: ['TRC20', 'ERC20', 'BEP20']
+        enum: ['TRC20', 'ERC20', 'BEP20', 'ADMIN']
       },
       paymentDate: {
         type: Date,
@@ -85,7 +85,7 @@ const subscriptionSchema = new mongoose.Schema<ISubscription>(
       },
       verificationMethod: {
         type: String,
-        enum: ['transaction_id', 'address_scan'],
+        enum: ['transaction_id', 'address_scan', 'admin_manual'],
         default: 'transaction_id'
       }
     }],
