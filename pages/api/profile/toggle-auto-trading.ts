@@ -1,11 +1,16 @@
 import { NextApiResponse } from "next";
+import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import AccountHistory from "@/models/AccountHistory";
 import Authenticate, { AuthenticatedRequest } from "@/utils/Authentificate";
+import { getAccountSnapshot } from "@/lib/accountSnapshot";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-here";
 
 export default async function POST(req: AuthenticatedRequest, res: NextApiResponse) {
   try {
+    await connectDB();
+    
     const authError = await Authenticate(req, res);
     if (authError) return;
 
@@ -44,6 +49,36 @@ export default async function POST(req: AuthenticatedRequest, res: NextApiRespon
       return res
         .status(403)
         .json({ message: "Auto trading cannot be disabled once enabled. Please contact support if needed." });
+    }
+
+    // If enabling auto trading, capture account snapshot
+    if (enabled && !user.isAutoTradingEnabled) {
+      try {
+        console.log('Capturing account snapshot for user:', user._id);
+        const accountSnapshot = await getAccountSnapshot(user.binanceApiKey!, user.binanceApiSecret!);
+        
+        // Create account history record
+        const accountHistory = new AccountHistory({
+          userId: user._id,
+          event: 'auto_trading_enabled',
+          accountBalance: {
+            totalUSDTValue: accountSnapshot.totalUSDTValue,
+            balances: accountSnapshot.balances,
+          },
+          accountInfo: accountSnapshot.accountInfo,
+        });
+
+        await accountHistory.save();
+        console.log('Account snapshot saved successfully');
+      } catch (snapshotError) {
+        console.error('Error capturing account snapshot:', snapshotError);
+        return res
+          .status(500)
+          .json({ 
+            message: "Failed to capture account snapshot. Please try again.",
+            error: snapshotError instanceof Error ? snapshotError.message : 'Unknown error'
+          });
+      }
     }
 
     // Update auto trading status
