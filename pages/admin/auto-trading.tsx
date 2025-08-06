@@ -15,6 +15,37 @@ interface AutoTradingUser {
   createdAt: string
 }
 
+interface BinanceAccountData {
+  user: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+    hasApiKeys: boolean
+  }
+  binanceAccount?: {
+    accountType: string
+    canTrade: boolean
+    canDeposit: boolean
+    canWithdraw: boolean
+    updateTime: number
+    usdtBalance: {
+      free: string
+      locked: string
+      total: string
+    }
+    balances: Array<{
+      asset: string
+      free: string
+      locked: string
+      totalBalance: string
+      usdtValue: string
+    }>
+    totalWalletBalanceUSDT: string
+  }
+  binanceError?: string
+}
+
 export default function AdminAutoTradingPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
@@ -22,6 +53,10 @@ export default function AdminAutoTradingPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [filter, setFilter] = useState<'all' | 'enabled' | 'forbidden'>('all')
+  const [showBinanceModal, setShowBinanceModal] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [binanceData, setBinanceData] = useState<BinanceAccountData | null>(null)
+  const [loadingBinance, setLoadingBinance] = useState(false)
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'admin')) {
@@ -111,6 +146,50 @@ export default function AdminAutoTradingPage() {
       console.error('Error bulk updating users:', error)
       setMessage('Error updating users')
     }
+  }
+
+  const fetchBinanceAccountData = async (userId: string) => {
+    try {
+      setLoadingBinance(true)
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/admin/user-binance-account?userId=${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setBinanceData(data)
+      } else {
+        const errorData = await response.json()
+        setBinanceData({
+          user: { id: userId, firstName: '', lastName: '', email: '', hasApiKeys: false },
+          binanceError: errorData.message || 'Error fetching Binance data'
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching Binance account data:', error)
+      setBinanceData({
+        user: { id: userId, firstName: '', lastName: '', email: '', hasApiKeys: false },
+        binanceError: 'Error fetching Binance data'
+      })
+    } finally {
+      setLoadingBinance(false)
+    }
+  }
+
+  const openBinanceModal = (userId: string) => {
+    setSelectedUserId(userId)
+    setShowBinanceModal(true)
+    fetchBinanceAccountData(userId)
+  }
+
+  const closeBinanceModal = () => {
+    setShowBinanceModal(false)
+    setSelectedUserId(null)
+    setBinanceData(null)
   }
 
   if (loading || isLoading) {
@@ -282,16 +361,26 @@ export default function AdminAutoTradingPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() => toggleAutoTradingPermission(user._id, user.isAutoTradingAllowed)}
-                        className={`px-3 py-1 rounded text-xs font-medium ${
-                          user.isAutoTradingAllowed
-                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                            : 'bg-green-100 text-green-700 hover:bg-green-200'
-                        }`}
-                      >
-                        {user.isAutoTradingAllowed ? 'Forbid' : 'Allow'}
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => toggleAutoTradingPermission(user._id, user.isAutoTradingAllowed)}
+                          className={`px-3 py-1 rounded text-xs font-medium ${
+                            user.isAutoTradingAllowed
+                              ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                              : 'bg-green-100 text-green-700 hover:bg-green-200'
+                          }`}
+                        >
+                          {user.isAutoTradingAllowed ? 'Forbid' : 'Allow'}
+                        </button>
+                        {user.hasApiKeys && (
+                          <button
+                            onClick={() => openBinanceModal(user._id)}
+                            className="px-3 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
+                          >
+                            View Account
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -305,6 +394,151 @@ export default function AdminAutoTradingPage() {
             </div>
           )}
         </div>
+
+        {/* Binance Account Modal */}
+        {showBinanceModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Binance Account Details
+                  {binanceData?.user && ` - ${binanceData.user.firstName} ${binanceData.user.lastName}`}
+                </h2>
+                <button
+                  onClick={closeBinanceModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="p-6">
+                {loadingBinance ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-gray-600">Loading Binance account data...</span>
+                  </div>
+                ) : binanceData?.binanceError ? (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex">
+                      <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800">Error Loading Account Data</h3>
+                        <p className="text-sm text-red-700 mt-1">{binanceData.binanceError}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : binanceData?.binanceAccount ? (
+                  <div className="space-y-6">
+                    {/* Account Overview */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-green-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-600">USDT Available</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          ${binanceData.binanceAccount.usdtBalance.free}
+                        </p>
+                      </div>
+                      <div className="bg-yellow-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-600">USDT Locked</p>
+                        <p className="text-2xl font-bold text-yellow-600">
+                          ${binanceData.binanceAccount.usdtBalance.locked}
+                        </p>
+                      </div>
+                      <div className="bg-blue-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-600">Total USDT</p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          ${binanceData.binanceAccount.usdtBalance.total}
+                        </p>
+                      </div>
+                      <div className="bg-purple-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-600">Total Wallet (USDT)</p>
+                        <p className="text-2xl font-bold text-purple-600">
+                          ${binanceData.binanceAccount.totalWalletBalanceUSDT}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Account Status */}
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Account Status</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="flex items-center">
+                          <span className="text-sm text-gray-600">Can Trade:</span>
+                          <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                            binanceData.binanceAccount.canTrade ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {binanceData.binanceAccount.canTrade ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-sm text-gray-600">Can Deposit:</span>
+                          <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                            binanceData.binanceAccount.canDeposit ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {binanceData.binanceAccount.canDeposit ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-sm text-gray-600">Can Withdraw:</span>
+                          <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                            binanceData.binanceAccount.canWithdraw ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {binanceData.binanceAccount.canWithdraw ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-sm text-gray-600">Account Type:</span>
+                          <span className="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                            {binanceData.binanceAccount.accountType}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Top Balances */}
+                    {binanceData.binanceAccount.balances.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">Top Asset Balances</h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Asset</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Free</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Locked</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">USDT Value</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {binanceData.binanceAccount.balances.map((balance, index) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                  <td className="px-4 py-2 text-sm font-medium text-gray-900">{balance.asset}</td>
+                                  <td className="px-4 py-2 text-sm text-gray-700">{parseFloat(balance.free).toFixed(8)}</td>
+                                  <td className="px-4 py-2 text-sm text-gray-700">{parseFloat(balance.locked).toFixed(8)}</td>
+                                  <td className="px-4 py-2 text-sm text-gray-700">{balance.totalBalance}</td>
+                                  <td className="px-4 py-2 text-sm text-gray-700">${balance.usdtValue}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No account data available
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
