@@ -65,8 +65,6 @@ export default async function handler(
       delete userObj.binanceApiSecret;
       const lastAccountHistory =
         lastHistories.filter((h) => h.userId === user._id.toString())[0] || {};
-      console.log("User:", user._id);
-      console.log("Last Account History:", lastAccountHistory);
       const tradingSettings = user.tradingSettingsId || defaultTradingSetting;
       return {
         ...userObj,
