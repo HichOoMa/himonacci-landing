@@ -32,7 +32,7 @@ export default async function handler(
     await connectDB();
     const user = await User.findById(userId).select(
       "+binanceApiKey +binanceApiSecret"
-    );
+    ).populate("tradingSettingsId");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -158,12 +158,12 @@ export default async function handler(
         email: user.email,
         hasApiKeys: !!(user.binanceApiKey && user.binanceApiSecret),
         startBalance: lastHistories
-          ? lastHistories.accountBalance?.totalUSDTValue || 0
-          : 0,
+          ? lastHistories.accountBalance?.totalUSDTValue.toFixed(2) || "0.00"
+          : "0.00",
         targetBalance: lastHistories
-          ? lastHistories?.accountBalance?.totalUSDTValue *
-              (1 + (tradingSettings.closeAllProfitThreshold * 1.1) / 100) || 0
-          : 0,
+          ? (lastHistories?.accountBalance?.totalUSDTValue *
+              (1 + (tradingSettings.closeAllProfitThreshold * 1.1) / 100)).toFixed(2) || "0.00"
+          : "0.00",
       },
       binanceAccount,
       binanceError,
