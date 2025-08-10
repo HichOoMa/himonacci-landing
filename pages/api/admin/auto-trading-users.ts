@@ -42,24 +42,18 @@ export default async function handler(
       .sort({ createdAt: -1 });
 
     // Find last account history for every user
-    const userIds = users.map((user) => user._id);
+    const userIds = users.map((user) => user._id.toString());
     const lastHistories = await AccountHistory.aggregate([
-      { $match: { user: { $in: userIds } } },
+      { $match: { userId: { $in: userIds } } },
       { $sort: { createdAt: -1 } },
       {
         $group: {
-          _id: "$user",
+          _id: "$userId",
           lastHistory: { $first: "$$ROOT" },
         },
       },
       { $replaceRoot: { newRoot: "$lastHistory" } }, // Flatten document
     ]);
-
-    // Map userId to lastHistory for quick lookup
-    const lastHistoryMap = new Map<string, any>();
-    lastHistories.forEach((h) => {
-      lastHistoryMap.set(h._id.toString(), h.lastHistory);
-    });
 
     const defaultTradingSetting = await TradingSettings.findOne({
       isDefault: true,
@@ -70,15 +64,20 @@ export default async function handler(
       delete userObj.binanceApiKey;
       delete userObj.binanceApiSecret;
       const lastAccountHistory =
-        lastHistoryMap.get(user._id.toString()) || null;
+        lastHistories.filter((h) => h.userId === user._id.toString())[0] || {};
+      console.log("User:", user._id);
+      console.log("Last Account History:", lastAccountHistory);
       const tradingSettings = user.tradingSettingsId || defaultTradingSetting;
       return {
         ...userObj,
         hasApiKeys: !!(user.binanceApiKey && user.binanceApiSecret),
-        startBalance: lastAccountHistory.accountBalance?.totalUSDTValue || 0,
-        targetBalance:
-          lastAccountHistory.accountBalance?.totalUSDTValue *
-            (1 + (tradingSettings.closeAllProfitThreshold * 1.1) / 100) || 0,
+        startBalance: lastAccountHistory
+          ? lastAccountHistory.accountBalance?.totalUSDTValue || 0
+          : 0,
+        targetBalance: lastAccountHistory
+          ? lastAccountHistory?.accountBalance?.totalUSDTValue *
+              (1 + (tradingSettings.closeAllProfitThreshold * 1.1) / 100) || 0
+          : 0,
       };
     });
 
