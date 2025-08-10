@@ -42,40 +42,14 @@ export default async function handler(
       .sort({ createdAt: -1 });
 
     // Find last account history for every user
-    const userIds = users.map((user) => user._id.toString());
-    const lastHistories = await AccountHistory.aggregate([
-      { $match: { userId: { $in: userIds } } },
-      { $sort: { createdAt: -1 } },
-      {
-        $group: {
-          _id: "$userId",
-          lastHistory: { $first: "$$ROOT" },
-        },
-      },
-      { $replaceRoot: { newRoot: "$lastHistory" } }, // Flatten document
-    ]);
-
-    const defaultTradingSetting = await TradingSettings.findOne({
-      isDefault: true,
-    });
 
     const usersWithStats = users.map((user) => {
       const userObj = user.toObject();
       delete userObj.binanceApiKey;
       delete userObj.binanceApiSecret;
-      const lastAccountHistory =
-        lastHistories.filter((h) => h.userId === user._id.toString())[0] || {};
-      const tradingSettings = user.tradingSettingsId || defaultTradingSetting;
       return {
         ...userObj,
         hasApiKeys: !!(user.binanceApiKey && user.binanceApiSecret),
-        startBalance: lastAccountHistory
-          ? lastAccountHistory.accountBalance?.totalUSDTValue || 0
-          : 0,
-        targetBalance: lastAccountHistory
-          ? lastAccountHistory?.accountBalance?.totalUSDTValue *
-              (1 + (tradingSettings.closeAllProfitThreshold * 1.1) / 100) || 0
-          : 0,
       };
     });
 
