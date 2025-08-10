@@ -24,6 +24,12 @@ interface BinanceAccountData {
     hasApiKeys: boolean;
     startBalance: number;
     targetBalance: number;
+    primary: number;
+    secondary: number;
+    periodCountdown?: {
+      nextPeriodStart: string;
+      timeRemaining: number; // in seconds
+    };
   };
   binanceAccount?: {
     accountType: string;
@@ -61,6 +67,7 @@ export default function AdminAutoTradingPage() {
     null
   );
   const [loadingBinance, setLoadingBinance] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<number>(0);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== "admin")) {
@@ -73,6 +80,40 @@ export default function AdminAutoTradingPage() {
       fetchAutoTradingUsers();
     }
   }, [user, filter]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (binanceData?.user?.periodCountdown?.timeRemaining) {
+      setTimeRemaining(binanceData.user.periodCountdown.timeRemaining);
+
+      const timer = setInterval(() => {
+        setTimeRemaining((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [binanceData?.user?.periodCountdown?.timeRemaining]);
+
+  // Helper function to format time remaining
+  const formatTimeRemaining = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${remainingSeconds}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${remainingSeconds}s`;
+    } else {
+      return `${remainingSeconds}s`;
+    }
+  };
 
   const fetchAutoTradingUsers = async () => {
     try {
@@ -192,6 +233,9 @@ export default function AdminAutoTradingPage() {
             hasApiKeys: false,
             startBalance: 0,
             targetBalance: 0,
+            primary: 0,
+            secondary: 0,
+            periodCountdown: undefined,
           },
           binanceError: errorData.message || "Error fetching Binance data",
         });
@@ -207,6 +251,9 @@ export default function AdminAutoTradingPage() {
           hasApiKeys: false,
           startBalance: 0,
           targetBalance: 0,
+          primary: 0,
+          secondary: 0,
+          periodCountdown: undefined,
         },
         binanceError: "Error fetching Binance data",
       });
@@ -533,7 +580,7 @@ export default function AdminAutoTradingPage() {
                 ) : binanceData?.binanceAccount ? (
                   <div className="space-y-6">
                     {/* Account Overview */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div className="bg-green-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-600">USDT Available</p>
                         <p className="text-2xl font-bold text-green-600">
@@ -560,7 +607,50 @@ export default function AdminAutoTradingPage() {
                           ${binanceData.user.targetBalance || "0.00"}
                         </p>
                       </div>
+                      <div className="bg-orange-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-600">Primary Count</p>
+                        <p className="text-2xl font-bold text-orange-600">
+                          {binanceData.user.primary}
+                        </p>
+                      </div>
+                      <div className="bg-teal-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-600">Secondary Count</p>
+                        <p className="text-2xl font-bold text-teal-600">
+                          {binanceData.user.secondary}
+                        </p>
+                      </div>
                     </div>
+                    {/* Period Countdown */}
+                    {binanceData.user.periodCountdown && (
+                      <div className="bg-indigo-50 p-4 rounded-lg">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                          Next Period Countdown
+                        </h3>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-600">
+                              Next Period Starts:
+                            </p>
+                            <p className="text-lg font-medium text-gray-900">
+                              {new Date(
+                                binanceData.user.periodCountdown.nextPeriodStart
+                              ).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-600">
+                              Time Remaining:
+                            </p>
+                            <p className="text-2xl font-bold text-indigo-600">
+                              {formatTimeRemaining(
+                                timeRemaining ||
+                                  binanceData.user.periodCountdown.timeRemaining
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Account Status */}
                     <div className="bg-gray-50 p-4 rounded-lg">
