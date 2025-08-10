@@ -32,13 +32,18 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
     }
 
     const users = await User.find(query)
-      .select('-password -binanceApiKey -binanceApiSecret')
+      .select('-password +binanceApiKey +binanceApiSecret')
       .sort({ createdAt: -1 });
 
-    const usersWithStats = users.map(user => ({
-      ...user.toObject(),
-      hasApiKeys: !!(user.binanceApiKey && user.binanceApiSecret)
-    }));
+    const usersWithStats = users.map(user => {
+      const userObj = user.toObject();
+      delete userObj.binanceApiKey;
+      delete userObj.binanceApiSecret;
+      return {
+        ...userObj,
+        hasApiKeys: !!(user.binanceApiKey && user.binanceApiSecret)
+      };
+    });
 
     res.status(200).json({ users: usersWithStats });
   } catch (error) {
