@@ -79,7 +79,7 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
         }
 
         // Make request to trader service to close all positions for this user
-        const traderResponse = await fetch(`${traderServiceUrl}/user/${targetUserId}/close-all`, {
+        const traderResponse = await fetch(`${traderServiceUrl}/users/${targetUserId}/close-all`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -87,7 +87,6 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
           },
         });
 
-        console.log(traderResponse)
         if (traderResponse.ok) {
           const traderData = await traderResponse.json();
           results.push({
