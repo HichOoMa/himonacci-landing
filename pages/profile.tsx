@@ -57,6 +57,7 @@ interface AccountStats {
     email: string;
     isAutoTradingEnabled: boolean;
     isAutoTradingAllowed: boolean;
+    bnbBurnEnabled: boolean;
     hasApiKeys: boolean;
     subscriptionStatus: string;
   };
@@ -100,6 +101,7 @@ export default function ProfileDashboard() {
   const [apiSecret, setApiSecret] = useState("");
   const [savingKeys, setSavingKeys] = useState(false);
   const [autoTradingEnabled, setAutoTradingEnabled] = useState(false);
+  const [bnbBurnEnabled, setBnbBurnEnabled] = useState(true);
   const [showApiSecret, setShowApiSecret] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
@@ -187,6 +189,7 @@ export default function ProfileDashboard() {
         const data = await response.json();
         setStats(data);
         setAutoTradingEnabled(data.user.isAutoTradingEnabled);
+        setBnbBurnEnabled(data.user.bnbBurnEnabled);
       }
     } catch (error) {
       console.error("Failed to fetch account stats:", error);
@@ -412,6 +415,39 @@ export default function ProfileDashboard() {
       toast.error("Failed to toggle auto trading");
     } finally {
       setShowDisableModal(false);
+    }
+  };
+
+  const toggleBnbBurn = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await fetch("/api/profile/update", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          bnbBurnEnabled: !bnbBurnEnabled,
+        }),
+      });
+
+      if (response.ok) {
+        setBnbBurnEnabled(!bnbBurnEnabled);
+        fetchAccountStats();
+        toast.success(
+          `BNB burn for fees ${
+            !bnbBurnEnabled ? "enabled" : "disabled"
+          } successfully`
+        );
+      } else {
+        const error = await response.json();
+        toast.error(error.message || "Failed to update BNB burn setting");
+      }
+    } catch (error) {
+      toast.error("Failed to update BNB burn setting");
     }
   };
 
@@ -1130,6 +1166,75 @@ export default function ProfileDashboard() {
                         <>
                           <Play className="w-6 h-6 mr-2 inline" />
                           Enable Auto Trading
+                        </>
+                      )}
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* BNB Burn Control */}
+          <AnimatePresence>
+            {stats?.user.hasApiKeys && (
+              <motion.div
+                className="bg-primary-900/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-primary-800/50"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: 1.1 }}
+              >
+                <div className="px-6 py-4 border-b border-primary-800/50 bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 rounded-t-2xl">
+                  <div className="flex items-center">
+                    <CreditCard className="w-6 h-6 text-yellow-400 mr-3" />
+                    <h3 className="text-lg font-semibold text-white">
+                      BNB Fee Discount
+                    </h3>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        <DollarSign className="w-5 h-5 text-yellow-400 mr-2" />
+                        <h4 className="text-md font-semibold text-white">
+                          Use BNB for Trading Fees
+                        </h4>
+                        {bnbBurnEnabled && (
+                          <span className="ml-3 px-2 py-1 bg-yellow-500 text-white text-xs rounded-full">
+                            ENABLED
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-300 mb-2">
+                        Enable BNB burn to automatically use BNB for trading fee payments 
+                        and get a 25% discount on all trading fees.
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        When enabled, Binance will automatically deduct trading fees from 
+                        your BNB balance at a discounted rate.
+                      </p>
+                    </div>
+                    <motion.button
+                      onClick={toggleBnbBurn}
+                      className={`ml-6 px-8 py-4 rounded-2xl font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${
+                        bnbBurnEnabled
+                          ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white hover:from-yellow-600 hover:to-yellow-700 focus:ring-yellow-500"
+                          : "bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 focus:ring-gray-500"
+                      }`}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {bnbBurnEnabled ? (
+                        <>
+                          <CheckCircle className="w-6 h-6 mr-2 inline" />
+                          Enabled
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-6 h-6 mr-2 inline" />
+                          Disabled
                         </>
                       )}
                     </motion.button>

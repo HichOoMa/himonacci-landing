@@ -111,6 +111,7 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
         email: user.email,
         isAutoTradingEnabled: user.isAutoTradingEnabled,
         isAutoTradingAllowed: user.isAutoTradingAllowed !== false, // Default to true if undefined
+        bnbBurnEnabled: user.bnbBurnEnabled !== false, // Default to true if undefined
         hasApiKeys: !!(user.binanceApiKey && user.binanceApiSecret),
         subscriptionStatus: user.subscriptionStatus,
       },

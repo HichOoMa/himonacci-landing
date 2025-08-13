@@ -19,6 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
     const user = await User.findById(decoded.userId)
+    console.log('User found:', user)
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' })
@@ -31,12 +32,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       binanceApiKey,
       binanceApiSecret,
       isAutoTradingEnabled,
+      bnbBurnEnabled,
       acceptedTermsOfUse,
       riskTolerance,
       maxDailyLoss,
       maxPositionSize,
       preferredTradingPairs,
     } = req.body
+
+        console.log("bnb burn enabled:", bnbBurnEnabled)
 
     // Update basic profile fields
     if (firstName) user.firstName = firstName
@@ -47,6 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (binanceApiKey !== undefined) user.binanceApiKey = binanceApiKey
     if (binanceApiSecret !== undefined) user.binanceApiSecret = binanceApiSecret
     if (isAutoTradingEnabled !== undefined) user.isAutoTradingEnabled = isAutoTradingEnabled
+    if (bnbBurnEnabled !== undefined) user.bnbBurnEnabled = bnbBurnEnabled
     if (acceptedTermsOfUse !== undefined) {
       user.acceptedTermsOfUse = acceptedTermsOfUse
       if (acceptedTermsOfUse) {
@@ -58,6 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (maxPositionSize !== undefined) user.maxPositionSize = maxPositionSize
     if (preferredTradingPairs) user.preferredTradingPairs = preferredTradingPairs
 
+    console.log('Updating user:', user)
     await user.save()
 
     // Return user data without sensitive fields

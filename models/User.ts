@@ -27,6 +27,7 @@ export interface IUser {
   binanceApiSecret?: string
   isAutoTradingEnabled: boolean
   isAutoTradingAllowed: boolean // Admin can control this
+  bnbBurnEnabled: boolean // Whether to use BNB for trading fee discount
   tradingSettingsId?: string // Reference to TradingSettings
   role: 'user' | 'admin'
   createdAt: Date
@@ -121,6 +122,10 @@ const userSchema = new mongoose.Schema<IUser>(
     isAutoTradingAllowed: {
       type: Boolean,
       default: true, // Allow by default, admin can disable
+    },
+    bnbBurnEnabled: {
+      type: Boolean,
+      default: true, // Enable BNB burn for trading fees by default
     },
     tradingSettingsId: {
       type: mongoose.Schema.Types.ObjectId,
