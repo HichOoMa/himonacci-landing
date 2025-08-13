@@ -56,7 +56,7 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
     for (const targetUserId of targetUserIds) {
       try {
         // Validate that the user exists
-        const user = await User.findById(targetUserId);
+        const user = await User.findById(targetUserId).select('+binanceApiKey +binanceApiSecret');
         if (!user) {
           results.push({
             userId: targetUserId,
