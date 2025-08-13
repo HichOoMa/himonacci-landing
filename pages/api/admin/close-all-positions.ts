@@ -101,7 +101,7 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
           results.push({
             userId: targetUserId,
             success: false,
-            error: errorData.message || `Failed to close positions: ${traderResponse.statusText}`
+            error: errorData.message || `Failed to close positions: ${traderResponse}`
           });
           errorCount++;
         }
