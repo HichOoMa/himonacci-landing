@@ -78,13 +78,11 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
           continue;
         }
 
-        // Make request to trader service to close all positions for this user
-        const traderResponse = await fetch(`${traderServiceUrl}/users/${targetUserId}/close-all`, {
+        const traderResponse = await fetch(`${traderServiceUrl}/api/users/${targetUserId}/close-all`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            // Add any authentication headers if needed
-          },
+            'Content-Type': 'application/json'
+          }
         });
 
         if (traderResponse.ok) {
