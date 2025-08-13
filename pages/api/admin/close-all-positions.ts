@@ -87,6 +87,7 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
           },
         });
 
+        console.log(traderResponse)
         if (traderResponse.ok) {
           const traderData = await traderResponse.json();
           results.push({
