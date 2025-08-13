@@ -68,6 +68,8 @@ export default function AdminAutoTradingPage() {
   );
   const [loadingBinance, setLoadingBinance] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [loadingCloseAll, setLoadingCloseAll] = useState<string | boolean>(false);
+  const [closeAllResults, setCloseAllResults] = useState<any>(null);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== "admin")) {
@@ -202,6 +204,52 @@ export default function AdminAutoTradingPage() {
     } catch (error) {
       console.error("Error bulk updating users:", error);
       setMessage("Error updating users");
+    }
+  };
+
+  const closeAllPositions = async (userId?: string) => {
+    // Confirmation dialog
+    const isConfirmed = window.confirm(
+      userId 
+        ? 'Are you sure you want to close ALL positions for this user? This action cannot be undone.'
+        : 'Are you sure you want to close ALL positions for ALL users with active auto-trading? This action cannot be undone.'
+    );
+    
+    if (!isConfirmed) {
+      return;
+    }
+
+    try {
+      setLoadingCloseAll(userId || true);
+      const token = localStorage.getItem("token");
+      
+      const requestBody = userId 
+        ? { userId } 
+        : { userIds: users.filter(u => u.hasApiKeys && u.isAutoTradingEnabled).map(u => u._id) };
+      
+      const response = await fetch("/api/admin/close-all-positions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      setCloseAllResults(data);
+
+      if (response.ok || response.status === 207) {
+        setMessage(data.message);
+      } else {
+        setMessage(data.message || "Error closing positions");
+      }
+    } catch (error) {
+      console.error("Error closing positions:", error);
+      setMessage("Error closing positions");
+      setCloseAllResults(null);
+    } finally {
+      setLoadingCloseAll(false);
     }
   };
 
@@ -345,7 +393,7 @@ export default function AdminAutoTradingPage() {
                 </button>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => bulkTogglePermission(true)}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
@@ -357,6 +405,21 @@ export default function AdminAutoTradingPage() {
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
                 >
                   Forbid All
+                </button>
+                <button
+                  onClick={() => closeAllPositions()}
+                  disabled={loadingCloseAll === true}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  title={`Close all positions for ${users.filter(u => u.hasApiKeys && u.isAutoTradingEnabled).length} users with active auto-trading`}
+                >
+                  {loadingCloseAll === true ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Closing...
+                    </>
+                  ) : (
+                    `Close All Positions (${users.filter(u => u.hasApiKeys && u.isAutoTradingEnabled).length})`
+                  )}
                 </button>
               </div>
             </div>
@@ -493,12 +556,23 @@ export default function AdminAutoTradingPage() {
                           {user.isAutoTradingAllowed ? "Forbid" : "Allow"}
                         </button>
                         {user.hasApiKeys && (
-                          <button
-                            onClick={() => openBinanceModal(user._id)}
-                            className="px-3 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
-                          >
-                            View Account
-                          </button>
+                          <>
+                            <button
+                              onClick={() => openBinanceModal(user._id)}
+                              className="px-3 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
+                            >
+                              View Account
+                            </button>
+                            {user.isAutoTradingEnabled && (
+                              <button
+                                onClick={() => closeAllPositions(user._id)}
+                                disabled={loadingCloseAll === user._id}
+                                className="px-3 py-1 rounded text-xs font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {loadingCloseAll === user._id ? 'Closing...' : 'Close All'}
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     </td>
@@ -775,6 +849,108 @@ export default function AdminAutoTradingPage() {
                     No account data available
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Close All Results Modal */}
+        {closeAllResults && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Close All Positions Results
+                </h2>
+                <button
+                  onClick={() => setCloseAllResults(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-6">
+                {/* Summary */}
+                <div className="mb-6 grid grid-cols-3 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-gray-600">Total</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {closeAllResults.summary?.total || 0}
+                    </p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-gray-600">Successful</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {closeAllResults.summary?.successful || 0}
+                    </p>
+                  </div>
+                  <div className="bg-red-50 p-4 rounded-lg text-center">
+                    <p className="text-sm text-gray-600">Failed</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {closeAllResults.summary?.failed || 0}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Detailed Results */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Detailed Results
+                  </h3>
+                  <div className="max-h-60 overflow-y-auto">
+                    {closeAllResults.results?.map((result: any, index: number) => {
+                      const user = users.find(u => u._id === result.userId);
+                      return (
+                        <div
+                          key={index}
+                          className={`p-4 rounded-lg border ${
+                            result.success
+                              ? 'bg-green-50 border-green-200'
+                              : 'bg-red-50 border-red-200'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {user ? `${user.firstName} ${user.lastName}` : 'Unknown User'}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {user?.email || result.userId}
+                              </p>
+                            </div>
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                result.success
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {result.success ? 'Success' : 'Failed'}
+                            </span>
+                          </div>
+                          <p className={`mt-2 text-sm ${
+                            result.success ? 'text-green-700' : 'text-red-700'
+                          }`}>
+                            {result.message || result.error}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
