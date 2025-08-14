@@ -107,6 +107,11 @@ export default function ProfileDashboard() {
   const [copiedKey, setCopiedKey] = useState(false);
   const [showDisableModal, setShowDisableModal] = useState(false);
   
+  // Blacklisted symbols state
+  const [blacklistedSymbols, setBlacklistedSymbols] = useState<string[]>([]);
+  const [newSymbol, setNewSymbol] = useState("");
+  const [savingBlacklist, setSavingBlacklist] = useState(false);
+  
   // Subscription management state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
@@ -450,6 +455,84 @@ export default function ProfileDashboard() {
       toast.error("Failed to update BNB burn setting");
     }
   };
+
+  // Blacklisted symbols functions
+  const fetchBlacklistedSymbols = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await fetch("/api/profile/blacklisted-symbols", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBlacklistedSymbols(data.blacklistedSymbols || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch blacklisted symbols:", error);
+    }
+  };
+
+  const updateBlacklistedSymbols = async (symbols: string[]) => {
+    setSavingBlacklist(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await fetch("/api/profile/blacklisted-symbols", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          blacklistedSymbols: symbols,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBlacklistedSymbols(data.blacklistedSymbols);
+        toast.success("Blacklisted symbols updated successfully!");
+      } else {
+        const error = await response.json();
+        toast.error(error.message || "Failed to update blacklisted symbols");
+      }
+    } catch (error) {
+      toast.error("Failed to update blacklisted symbols");
+    } finally {
+      setSavingBlacklist(false);
+    }
+  };
+
+  const addSymbolToBlacklist = () => {
+    const symbol = newSymbol.toUpperCase().trim();
+    if (symbol && /^[A-Z]{2,10}USDT$/.test(symbol) && !blacklistedSymbols.includes(symbol)) {
+      const updatedSymbols = [...blacklistedSymbols, symbol];
+      updateBlacklistedSymbols(updatedSymbols);
+      setNewSymbol("");
+    } else if (blacklistedSymbols.includes(symbol)) {
+      toast.error("Symbol is already in blacklist");
+    } else {
+      toast.error("Invalid symbol format. Use format like BTCUSDT, ETHUSDT");
+    }
+  };
+
+  const removeSymbolFromBlacklist = (symbolToRemove: string) => {
+    const updatedSymbols = blacklistedSymbols.filter(symbol => symbol !== symbolToRemove);
+    updateBlacklistedSymbols(updatedSymbols);
+  };
+
+  // Load blacklisted symbols on component mount
+  useEffect(() => {
+    if (user) {
+      fetchBlacklistedSymbols();
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -1238,6 +1321,108 @@ export default function ProfileDashboard() {
                         </>
                       )}
                     </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Symbol Blacklist */}
+          <AnimatePresence>
+            {stats?.user.hasApiKeys && (
+              <motion.div
+                className="bg-primary-900/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-primary-800/50"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ delay: 0.8 }}
+              >
+                <div className="px-6 py-4 border-b border-primary-800/50 bg-gradient-to-r from-red-500/10 to-red-600/10 rounded-t-2xl">
+                  <div className="flex items-center">
+                    <X className="w-6 h-6 text-red-400 mr-3" />
+                    <h3 className="text-lg font-semibold text-white">
+                      Symbol Blacklist
+                    </h3>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="mb-6">
+                    <p className="text-gray-300 text-sm mb-4">
+                      Manage trading pairs that you want to exclude from automated trading.
+                      These symbols will be ignored by the auto trading system.
+                    </p>
+                    
+                    <div className="flex gap-3 mb-4">
+                      <input
+                        type="text"
+                        placeholder="Enter symbol (e.g., BTCUSDT)"
+                        value={newSymbol}
+                        onChange={(e) => setNewSymbol(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            addSymbolToBlacklist();
+                            e.preventDefault();
+                          }
+                        }}
+                        className="flex-1 px-4 py-3 bg-primary-800/50 border border-primary-700/50 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-200"
+                      />
+                      <motion.button
+                        onClick={addSymbolToBlacklist}
+                        disabled={savingBlacklist}
+                        className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        {savingBlacklist ? (
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          "Add"
+                        )}
+                      </motion.button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 min-h-[60px] p-4 bg-primary-800/30 rounded-xl border border-primary-700/30">
+                      {blacklistedSymbols.length === 0 ? (
+                        <div className="flex items-center justify-center w-full text-gray-400 text-sm">
+                          <X className="w-4 h-4 mr-2" />
+                          No symbols blacklisted yet
+                        </div>
+                      ) : (
+                        blacklistedSymbols.map((symbol, index) => (
+                          <motion.div
+                            key={index}
+                            className="flex items-center gap-2 bg-red-600/20 text-red-400 px-3 py-2 rounded-full text-sm border border-red-500/30"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                          >
+                            {symbol}
+                            <motion.button
+                              onClick={() => removeSymbolFromBlacklist(symbol)}
+                              disabled={savingBlacklist}
+                              className="text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              <X className="w-3 h-3" />
+                            </motion.button>
+                          </motion.div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                      <div className="flex items-start">
+                        <AlertCircle className="w-5 h-5 text-yellow-400 mr-3 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-yellow-400 font-medium text-sm">Important Note</p>
+                          <p className="text-yellow-300/80 text-xs mt-1">
+                            Blacklisted symbols will be excluded from all automated trading activities. 
+                            Make sure to only blacklist symbols you don't want the system to trade.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>

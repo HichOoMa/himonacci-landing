@@ -12,6 +12,7 @@ export interface ITradingSettings {
   closeAllProfitThreshold: number
   minExpectedProfit: number // Minimum expected profit percentage
   minVolume: number // Minimum trading volume required
+  blacklistedSymbols: string[] // List of symbols to exclude from trading
   createdAt: Date
   updatedAt: Date
 }
@@ -68,6 +69,17 @@ const tradingSettingsSchema = new mongoose.Schema<ITradingSettings>(
       type: Number,
       required: [true, 'Minimum volume is required'],
       min: [0, 'Minimum volume must be non-negative'],
+    },
+    blacklistedSymbols: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function(symbols: string[]) {
+          // Validate that all symbols are valid format (e.g., BTCUSDT, ETHUSDT)
+          return symbols.every(symbol => /^[A-Z]{2,10}USDT$/.test(symbol.toUpperCase()))
+        },
+        message: 'All symbols must be valid trading pairs ending with USDT'
+      }
     },
   },
   {

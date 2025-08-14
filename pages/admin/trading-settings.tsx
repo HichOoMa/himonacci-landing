@@ -37,6 +37,7 @@ interface TradingSettings {
   closeAllProfitThreshold: number
   minExpectedProfit: number
   minVolume: number
+  blacklistedSymbols: string[]
   createdAt: string
   updatedAt: string
 }
@@ -52,6 +53,7 @@ interface FormData {
   closeAllProfitThreshold: number
   minExpectedProfit: number
   minVolume: number
+  blacklistedSymbols: string[]
 }
 
 export default function TradingSettingsAdmin() {
@@ -74,6 +76,7 @@ export default function TradingSettingsAdmin() {
     closeAllProfitThreshold: 4,
     minExpectedProfit: 5,
     minVolume: 1000,
+    blacklistedSymbols: [],
   })
 
   const getToken = () => {
@@ -151,6 +154,7 @@ export default function TradingSettingsAdmin() {
       closeAllProfitThreshold: settings.closeAllProfitThreshold,
       minExpectedProfit: settings.minExpectedProfit,
       minVolume: settings.minVolume,
+      blacklistedSymbols: settings.blacklistedSymbols || [],
     })
     setEditingId(settings._id)
     setShowForm(true)
@@ -194,6 +198,7 @@ export default function TradingSettingsAdmin() {
       closeAllProfitThreshold: 100,
       minExpectedProfit: 5,
       minVolume: 1000,
+      blacklistedSymbols: [],
     })
     setEditingId(null)
     setShowForm(false)
@@ -233,6 +238,7 @@ export default function TradingSettingsAdmin() {
       closeAllProfitThreshold: settings.closeAllProfitThreshold,
       minExpectedProfit: settings.minExpectedProfit,
       minVolume: settings.minVolume,
+      blacklistedSymbols: settings.blacklistedSymbols || [],
     })
     setEditingId(null)
     setShowForm(true)
@@ -546,6 +552,89 @@ export default function TradingSettingsAdmin() {
                     </div>
                   </div>
 
+                  {/* Symbol Blacklist */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-red-100 rounded-lg">
+                        <X className="w-5 h-5 text-red-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">Symbol Blacklist</h3>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                          Blacklisted Symbols
+                        </label>
+                        <p className="text-sm text-gray-600 mb-3">
+                          Add trading pairs to exclude from automated trading (e.g., BTCUSDT, ETHUSDT)
+                        </p>
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Enter symbol (e.g., BTCUSDT)"
+                              className="flex-1 px-4 py-3 text-foreground bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                              onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                  const input = e.currentTarget;
+                                  const symbol = input.value.toUpperCase().trim();
+                                  if (symbol && /^[A-Z]{2,10}USDT$/.test(symbol) && !formData.blacklistedSymbols.includes(symbol)) {
+                                    setFormData({
+                                      ...formData,
+                                      blacklistedSymbols: [...formData.blacklistedSymbols, symbol]
+                                    });
+                                    input.value = '';
+                                  }
+                                  e.preventDefault();
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                                const symbol = input.value.toUpperCase().trim();
+                                if (symbol && /^[A-Z]{2,10}USDT$/.test(symbol) && !formData.blacklistedSymbols.includes(symbol)) {
+                                  setFormData({
+                                    ...formData,
+                                    blacklistedSymbols: [...formData.blacklistedSymbols, symbol]
+                                  });
+                                  input.value = '';
+                                }
+                              }}
+                              className="px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                            >
+                              Add
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {formData.blacklistedSymbols.map((symbol, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center gap-1 bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm"
+                              >
+                                {symbol}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFormData({
+                                      ...formData,
+                                      blacklistedSymbols: formData.blacklistedSymbols.filter((_, i) => i !== index)
+                                    });
+                                  }}
+                                  className="ml-1 text-red-600 hover:text-red-800"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Action Buttons */}
                   <div className="flex gap-4 pt-6 border-t border-gray-200">
                     <button
@@ -709,6 +798,31 @@ export default function TradingSettingsAdmin() {
                         </span>
                       </div>
                     </div>
+
+                    {/* Blacklisted Symbols */}
+                    {settings.blacklistedSymbols && settings.blacklistedSymbols.length > 0 && (
+                      <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-xl p-4 border border-red-100 mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <X className="w-4 h-4 text-red-600" />
+                          <span className="text-sm font-semibold text-red-600">Blacklisted Symbols</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {settings.blacklistedSymbols.slice(0, 6).map((symbol, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 bg-red-200/60 text-red-700 text-xs rounded-full font-medium"
+                            >
+                              {symbol}
+                            </span>
+                          ))}
+                          {settings.blacklistedSymbols.length > 6 && (
+                            <span className="px-2 py-1 bg-red-200/60 text-red-700 text-xs rounded-full font-medium">
+                              +{settings.blacklistedSymbols.length - 6} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Action Buttons */}
                     <div className="flex gap-3">

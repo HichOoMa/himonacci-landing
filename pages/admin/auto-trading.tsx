@@ -26,10 +26,7 @@ interface BinanceAccountData {
     targetBalance: number;
     primary: number;
     secondary: number;
-    periodCountdown?: {
-      nextPeriodStart: string;
-      timeRemaining: number; // in seconds
-    };
+    periodEndTime: string;
   };
   binanceAccount?: {
     accountType: string;
@@ -85,8 +82,12 @@ export default function AdminAutoTradingPage() {
 
   // Countdown timer effect
   useEffect(() => {
-    if (binanceData?.user?.periodCountdown?.timeRemaining) {
-      setTimeRemaining(binanceData.user.periodCountdown.timeRemaining);
+    if (binanceData?.user?.periodEndTime) {
+      const remainingSeconds = Math.floor(
+        new Date(binanceData.user.periodEndTime).getTime() / 1000 -
+          Date.now() / 1000
+      );
+      setTimeRemaining(remainingSeconds);
 
       const timer = setInterval(() => {
         setTimeRemaining((prev) => {
@@ -100,7 +101,7 @@ export default function AdminAutoTradingPage() {
 
       return () => clearInterval(timer);
     }
-  }, [binanceData?.user?.periodCountdown?.timeRemaining]);
+  }, [binanceData?.user?.periodEndTime]);
 
   // Helper function to format time remaining
   const formatTimeRemaining = (seconds: number) => {
@@ -283,7 +284,7 @@ export default function AdminAutoTradingPage() {
             targetBalance: 0,
             primary: 0,
             secondary: 0,
-            periodCountdown: undefined,
+            periodEndTime: "",
           },
           binanceError: errorData.message || "Error fetching Binance data",
         });
@@ -301,7 +302,7 @@ export default function AdminAutoTradingPage() {
           targetBalance: 0,
           primary: 0,
           secondary: 0,
-          periodCountdown: undefined,
+          periodEndTime: "",
         },
         binanceError: "Error fetching Binance data",
       });
@@ -695,7 +696,7 @@ export default function AdminAutoTradingPage() {
                       </div>
                     </div>
                     {/* Period Countdown */}
-                    {binanceData.user.periodCountdown && (
+                    {binanceData.user.periodEndTime && (
                       <div className="bg-indigo-50 p-4 rounded-lg">
                         <h3 className="text-lg font-semibold text-gray-900 mb-3">
                           Next Period Countdown
@@ -707,7 +708,7 @@ export default function AdminAutoTradingPage() {
                             </p>
                             <p className="text-lg font-medium text-gray-900">
                               {new Date(
-                                binanceData.user.periodCountdown.nextPeriodStart
+                                binanceData.user.periodEndTime
                               ).toLocaleString()}
                             </p>
                           </div>
@@ -718,7 +719,7 @@ export default function AdminAutoTradingPage() {
                             <p className="text-2xl font-bold text-indigo-600">
                               {formatTimeRemaining(
                                 timeRemaining ||
-                                  binanceData.user.periodCountdown.timeRemaining
+                                  0
                               )}
                             </p>
                           </div>

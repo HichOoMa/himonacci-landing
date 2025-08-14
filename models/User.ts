@@ -29,6 +29,7 @@ export interface IUser {
   isAutoTradingAllowed: boolean // Admin can control this
   bnbBurnEnabled: boolean // Whether to use BNB for trading fee discount
   tradingSettingsId?: string // Reference to TradingSettings
+  blacklistedSymbols?: string[] // User's personal blacklisted symbols
   role: 'user' | 'admin'
   createdAt: Date
   updatedAt: Date
@@ -130,6 +131,17 @@ const userSchema = new mongoose.Schema<IUser>(
     tradingSettingsId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'TradingSettings',
+    },
+    blacklistedSymbols: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function(symbols: string[]) {
+          // Validate that all symbols are valid format (e.g., BTCUSDT, ETHUSDT)
+          return symbols.every(symbol => /^[A-Z]{2,10}USDT$/.test(symbol.toUpperCase()))
+        },
+        message: 'All symbols must be valid trading pairs ending with USDT'
+      }
     },
     role: {
       type: String,

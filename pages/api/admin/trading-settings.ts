@@ -65,6 +65,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       closeAllProfitThreshold,
       minExpectedProfit,
       minVolume,
+      blacklistedSymbols,
     } = req.body
 
     // Validate required fields
@@ -86,6 +87,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       closeAllProfitThreshold,
       minExpectedProfit,
       minVolume,
+      blacklistedSymbols: blacklistedSymbols || [],
     })
 
     await newTradingSettings.save()
@@ -122,6 +124,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse) {
       closeAllProfitThreshold,
       minExpectedProfit,
       minVolume,
+      blacklistedSymbols,
     } = req.body
 
     if (!id) {
@@ -148,6 +151,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse) {
     tradingSettings.closeAllProfitThreshold = closeAllProfitThreshold !== undefined ? closeAllProfitThreshold : tradingSettings.closeAllProfitThreshold
     tradingSettings.minExpectedProfit = minExpectedProfit !== undefined ? minExpectedProfit : tradingSettings.minExpectedProfit
     tradingSettings.minVolume = minVolume !== undefined ? minVolume : tradingSettings.minVolume
+    tradingSettings.blacklistedSymbols = blacklistedSymbols !== undefined ? blacklistedSymbols : tradingSettings.blacklistedSymbols
 
     await tradingSettings.save()
 
