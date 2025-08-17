@@ -22,8 +22,31 @@ import {
   Eye,
   Save,
   ArrowUpDown,
-  Percent
+  Percent,
+  BarChart3,
+  Layers,
+  Hash,
+  GripVertical,
+  ToggleLeft
 } from 'lucide-react'
+
+interface AlgorithmEntry {
+  enabled: boolean
+  priority: number
+}
+
+interface AlgorithmPriority {
+  candles: {
+    entry1: AlgorithmEntry
+    entry2: AlgorithmEntry
+    entry3: AlgorithmEntry
+  }
+  zones: {
+    entry1: AlgorithmEntry
+    entry2: AlgorithmEntry
+    entry3: AlgorithmEntry
+  }
+}
 
 interface TradingSettings {
   _id: string
@@ -38,6 +61,7 @@ interface TradingSettings {
   minExpectedProfit: number
   minVolume: number
   blacklistedSymbols: string[]
+  algorithmPriority?: AlgorithmPriority
   createdAt: string
   updatedAt: string
 }
@@ -54,6 +78,7 @@ interface FormData {
   minExpectedProfit: number
   minVolume: number
   blacklistedSymbols: string[]
+  algorithmPriority: AlgorithmPriority
 }
 
 export default function TradingSettingsAdmin() {
@@ -65,6 +90,76 @@ export default function TradingSettingsAdmin() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'created' | 'default'>('default')
+
+  const getDefaultAlgorithmPriority = (): AlgorithmPriority => ({
+    candles: {
+      entry1: { enabled: true, priority: 4 },
+      entry2: { enabled: true, priority: 2 },
+      entry3: { enabled: true, priority: 1 }
+    },
+    zones: {
+      entry1: { enabled: true, priority: 3 },
+      entry2: { enabled: true, priority: 3 },
+      entry3: { enabled: true, priority: 3 }
+    }
+  })
+
+  const updateAlgorithmEntry = (
+    algorithm: 'candles' | 'zones',
+    entry: 'entry1' | 'entry2' | 'entry3',
+    field: 'enabled' | 'priority',
+    value: boolean | number
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      algorithmPriority: {
+        ...prev.algorithmPriority,
+        [algorithm]: {
+          ...prev.algorithmPriority[algorithm],
+          [entry]: {
+            ...prev.algorithmPriority[algorithm][entry],
+            [field]: value
+          }
+        }
+      }
+    }))
+  }
+
+  const getActivePriorities = () => {
+    const priorities: Array<{ algorithm: string; entry: string; priority: number }> = []
+    
+    Object.entries(formData.algorithmPriority).forEach(([algorithm, algorithmData]) => {
+      Object.entries(algorithmData).forEach(([entry, entryData]) => {
+        const typedEntryData = entryData as AlgorithmEntry
+        if (typedEntryData.enabled) {
+          priorities.push({
+            algorithm,
+            entry,
+            priority: typedEntryData.priority
+          })
+        }
+      })
+    })
+    
+    return priorities.sort((a, b) => a.priority - b.priority)
+  }
+
+  const reorderPriorities = () => {
+    const activePriorities = getActivePriorities()
+    let priorityCounter = 1
+    
+    const newAlgorithmPriority = { ...formData.algorithmPriority }
+    
+    activePriorities.forEach(({ algorithm, entry }) => {
+      newAlgorithmPriority[algorithm as 'candles' | 'zones'][entry as 'entry1' | 'entry2' | 'entry3'].priority = priorityCounter++
+    })
+    
+    setFormData(prev => ({
+      ...prev,
+      algorithmPriority: newAlgorithmPriority
+    }))
+  }
+
   const [formData, setFormData] = useState<FormData>({
     name: '',
     isDefault: false,
@@ -77,6 +172,7 @@ export default function TradingSettingsAdmin() {
     minExpectedProfit: 5,
     minVolume: 1000,
     blacklistedSymbols: [],
+    algorithmPriority: getDefaultAlgorithmPriority(),
   })
 
   const getToken = () => {
@@ -155,6 +251,7 @@ export default function TradingSettingsAdmin() {
       minExpectedProfit: settings.minExpectedProfit,
       minVolume: settings.minVolume,
       blacklistedSymbols: settings.blacklistedSymbols || [],
+      algorithmPriority: settings.algorithmPriority || getDefaultAlgorithmPriority(),
     })
     setEditingId(settings._id)
     setShowForm(true)
@@ -199,6 +296,7 @@ export default function TradingSettingsAdmin() {
       minExpectedProfit: 5,
       minVolume: 1000,
       blacklistedSymbols: [],
+      algorithmPriority: getDefaultAlgorithmPriority(),
     })
     setEditingId(null)
     setShowForm(false)
@@ -239,6 +337,7 @@ export default function TradingSettingsAdmin() {
       minExpectedProfit: settings.minExpectedProfit,
       minVolume: settings.minVolume,
       blacklistedSymbols: settings.blacklistedSymbols || [],
+      algorithmPriority: settings.algorithmPriority || getDefaultAlgorithmPriority(),
     })
     setEditingId(null)
     setShowForm(true)
@@ -635,6 +734,160 @@ export default function TradingSettingsAdmin() {
                     </div>
                   </div>
 
+                  {/* Algorithm Priority Configuration */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-indigo-100 rounded-lg">
+                        <Layers className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">Algorithm Priority</h3>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
+                        <p className="text-sm text-gray-700 mb-4">
+                          Configure the priority and activation of trading algorithms. Lower priority numbers execute first.
+                        </p>
+                        
+                        {/* Candles Algorithm */}
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-blue-100 rounded-lg">
+                              <BarChart3 className="w-4 h-4 text-blue-600" />
+                            </div>
+                            <h4 className="text-md font-semibold text-gray-800">Candles Algorithm</h4>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {(['entry1', 'entry2', 'entry3'] as const).map((entry, index) => (
+                              <div key={entry} className="bg-white rounded-xl p-4 border border-gray-200">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <Hash className="w-4 h-4 text-gray-600" />
+                                    <span className="text-sm font-semibold text-gray-700">
+                                      Entry {index + 1}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={formData.algorithmPriority.candles[entry].enabled}
+                                      onChange={(e) => updateAlgorithmEntry('candles', entry, 'enabled', e.target.checked)}
+                                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    />
+                                    <ToggleLeft className={`w-4 h-4 ${formData.algorithmPriority.candles[entry].enabled ? 'text-green-600' : 'text-gray-400'}`} />
+                                  </div>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <label className="block text-xs font-medium text-gray-600">
+                                    Priority
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={formData.algorithmPriority.candles[entry].priority}
+                                    onChange={(e) => updateAlgorithmEntry('candles', entry, 'priority', parseInt(e.target.value))}
+                                    disabled={!formData.algorithmPriority.candles[entry].enabled}
+                                    className="w-full px-3 py-2 text-sm text-foreground bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Zones Algorithm */}
+                        <div className="space-y-4 mt-6">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-green-100 rounded-lg">
+                              <Layers className="w-4 h-4 text-green-600" />
+                            </div>
+                            <h4 className="text-md font-semibold text-gray-800">Zones Algorithm</h4>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {(['entry1', 'entry2', 'entry3'] as const).map((entry, index) => (
+                              <div key={entry} className="bg-white rounded-xl p-4 border border-gray-200">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <Hash className="w-4 h-4 text-gray-600" />
+                                    <span className="text-sm font-semibold text-gray-700">
+                                      Entry {index + 1}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={formData.algorithmPriority.zones[entry].enabled}
+                                      onChange={(e) => updateAlgorithmEntry('zones', entry, 'enabled', e.target.checked)}
+                                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    />
+                                    <ToggleLeft className={`w-4 h-4 ${formData.algorithmPriority.zones[entry].enabled ? 'text-green-600' : 'text-gray-400'}`} />
+                                  </div>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <label className="block text-xs font-medium text-gray-600">
+                                    Priority
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    value={formData.algorithmPriority.zones[entry].priority}
+                                    onChange={(e) => updateAlgorithmEntry('zones', entry, 'priority', parseInt(e.target.value))}
+                                    disabled={!formData.algorithmPriority.zones[entry].enabled}
+                                    className="w-full px-3 py-2 text-sm text-foreground bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Priority Summary */}
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                          <div className="flex items-center justify-between mb-4">
+                            <h5 className="text-sm font-semibold text-gray-700">Execution Order</h5>
+                            <button
+                              type="button"
+                              onClick={reorderPriorities}
+                              className="flex items-center gap-2 px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                            >
+                              <ArrowUpDown className="w-3 h-3" />
+                              Auto-Reorder
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            {getActivePriorities().map((item, index) => (
+                              <div key={`${item.algorithm}-${item.entry}`} className="flex items-center gap-3 p-2 bg-white rounded-lg border border-gray-200">
+                                <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
+                                  {index + 1}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className={`p-1 rounded ${item.algorithm === 'candles' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                                    {item.algorithm === 'candles' ? <BarChart3 className="w-3 h-3" /> : <Layers className="w-3 h-3" />}
+                                  </div>
+                                  <span className="text-sm font-medium text-gray-700 capitalize">
+                                    {item.algorithm} - {item.entry.replace('entry', 'Entry ')}
+                                  </span>
+                                </div>
+                                <div className="ml-auto text-xs text-gray-500">
+                                  Priority: {item.priority}
+                                </div>
+                              </div>
+                            ))}
+                            {getActivePriorities().length === 0 && (
+                              <div className="text-center py-4 text-sm text-gray-500">
+                                No active algorithms configured
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Action Buttons */}
                   <div className="flex gap-4 pt-6 border-t border-gray-200">
                     <button
@@ -820,6 +1073,85 @@ export default function TradingSettingsAdmin() {
                               +{settings.blacklistedSymbols.length - 6} more
                             </span>
                           )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Algorithm Priority */}
+                    {settings.algorithmPriority && (
+                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Layers className="w-4 h-4 text-indigo-600" />
+                          <span className="text-sm font-semibold text-indigo-600">Algorithm Priority</span>
+                        </div>
+                        <div className="space-y-2">
+                          {(() => {
+                            const activePriorities: Array<{ algorithm: string; entry: string; priority: number }> = []
+                            
+                            Object.entries(settings.algorithmPriority).forEach(([algorithm, algorithmData]) => {
+                              Object.entries(algorithmData).forEach(([entry, entryData]) => {
+                                const typedEntryData = entryData as AlgorithmEntry
+                                if (typedEntryData.enabled) {
+                                  activePriorities.push({
+                                    algorithm,
+                                    entry,
+                                    priority: typedEntryData.priority
+                                  })
+                                }
+                              })
+                            })
+                            
+                            return activePriorities
+                              .sort((a, b) => a.priority - b.priority)
+                              .slice(0, 4)
+                              .map((item, index) => (
+                                <div key={`${item.algorithm}-${item.entry}`} className="flex items-center gap-2">
+                                  <div className="flex items-center justify-center w-5 h-5 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">
+                                    {index + 1}
+                                  </div>
+                                  <div className={`p-1 rounded ${item.algorithm === 'candles' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                                    {item.algorithm === 'candles' ? <BarChart3 className="w-3 h-3" /> : <Layers className="w-3 h-3" />}
+                                  </div>
+                                  <span className="text-xs font-medium text-gray-600 capitalize">
+                                    {item.algorithm} - {item.entry.replace('entry', 'E')}
+                                  </span>
+                                </div>
+                              ))
+                          })()}
+                          {(() => {
+                            const activePriorities: Array<{ algorithm: string; entry: string; priority: number }> = []
+                            
+                            Object.entries(settings.algorithmPriority).forEach(([algorithm, algorithmData]) => {
+                              Object.entries(algorithmData).forEach(([entry, entryData]) => {
+                                const typedEntryData = entryData as AlgorithmEntry
+                                if (typedEntryData.enabled) {
+                                  activePriorities.push({
+                                    algorithm,
+                                    entry,
+                                    priority: typedEntryData.priority
+                                  })
+                                }
+                              })
+                            })
+                            
+                            if (activePriorities.length > 4) {
+                              return (
+                                <div className="text-xs text-gray-500">
+                                  +{activePriorities.length - 4} more algorithms
+                                </div>
+                              )
+                            }
+                            
+                            if (activePriorities.length === 0) {
+                              return (
+                                <div className="text-xs text-gray-500 italic">
+                                  No active algorithms
+                                </div>
+                              )
+                            }
+                            
+                            return null
+                          })()}
                         </div>
                       </div>
                     )}

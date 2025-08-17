@@ -66,6 +66,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       minExpectedProfit,
       minVolume,
       blacklistedSymbols,
+      algorithmPriority,
     } = req.body
 
     // Validate required fields
@@ -88,6 +89,18 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       minExpectedProfit,
       minVolume,
       blacklistedSymbols: blacklistedSymbols || [],
+      algorithmPriority: algorithmPriority || {
+        candles: {
+          entry1: { enabled: true, priority: 3 },
+          entry2: { enabled: true, priority: 2 },
+          entry3: { enabled: true, priority: 1 }
+        },
+        zones: {
+          entry1: { enabled: true, priority: 4 },
+          entry2: { enabled: true, priority: 5 },
+          entry3: { enabled: true, priority: 6 }
+        }
+      },
     })
 
     await newTradingSettings.save()
@@ -125,6 +138,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse) {
       minExpectedProfit,
       minVolume,
       blacklistedSymbols,
+      algorithmPriority,
     } = req.body
 
     if (!id) {
@@ -152,6 +166,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse) {
     tradingSettings.minExpectedProfit = minExpectedProfit !== undefined ? minExpectedProfit : tradingSettings.minExpectedProfit
     tradingSettings.minVolume = minVolume !== undefined ? minVolume : tradingSettings.minVolume
     tradingSettings.blacklistedSymbols = blacklistedSymbols !== undefined ? blacklistedSymbols : tradingSettings.blacklistedSymbols
+    tradingSettings.algorithmPriority = algorithmPriority !== undefined ? algorithmPriority : tradingSettings.algorithmPriority
 
     await tradingSettings.save()
 

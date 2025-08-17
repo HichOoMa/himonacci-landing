@@ -1,5 +1,23 @@
 import mongoose from 'mongoose'
 
+interface AlgorithmEntry {
+  enabled: boolean
+  priority: number
+}
+
+interface AlgorithmPriority {
+  candles: {
+    entry1: AlgorithmEntry
+    entry2: AlgorithmEntry
+    entry3: AlgorithmEntry
+  }
+  zones: {
+    entry1: AlgorithmEntry
+    entry2: AlgorithmEntry
+    entry3: AlgorithmEntry
+  }
+}
+
 export interface ITradingSettings {
   _id: string
   name: string
@@ -13,6 +31,7 @@ export interface ITradingSettings {
   minExpectedProfit: number // Minimum expected profit percentage
   minVolume: number // Minimum trading volume required
   blacklistedSymbols: string[] // List of symbols to exclude from trading
+  algorithmPriority?: AlgorithmPriority // Algorithm priority configuration
   createdAt: Date
   updatedAt: Date
 }
@@ -79,6 +98,50 @@ const tradingSettingsSchema = new mongoose.Schema<ITradingSettings>(
           return symbols.every(symbol => /^[A-Z]{2,10}USDT$/.test(symbol.toUpperCase()))
         },
         message: 'All symbols must be valid trading pairs ending with USDT'
+      }
+    },
+    algorithmPriority: {
+      type: {
+        candles: {
+          entry1: {
+            enabled: { type: Boolean, default: true },
+            priority: { type: Number, default: 1 }
+          },
+          entry2: {
+            enabled: { type: Boolean, default: true },
+            priority: { type: Number, default: 2 }
+          },
+          entry3: {
+            enabled: { type: Boolean, default: true },
+            priority: { type: Number, default: 3 }
+          }
+        },
+        zones: {
+          entry1: {
+            enabled: { type: Boolean, default: true },
+            priority: { type: Number, default: 4 }
+          },
+          entry2: {
+            enabled: { type: Boolean, default: true },
+            priority: { type: Number, default: 5 }
+          },
+          entry3: {
+            enabled: { type: Boolean, default: true },
+            priority: { type: Number, default: 6 }
+          }
+        }
+      },
+      default: {
+        candles: {
+          entry1: { enabled: true, priority: 1 },
+          entry2: { enabled: true, priority: 2 },
+          entry3: { enabled: true, priority: 3 }
+        },
+        zones: {
+          entry1: { enabled: true, priority: 4 },
+          entry2: { enabled: true, priority: 5 },
+          entry3: { enabled: true, priority: 6 }
+        }
       }
     },
   },
