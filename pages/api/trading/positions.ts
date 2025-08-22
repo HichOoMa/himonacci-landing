@@ -28,12 +28,14 @@ export default async function handler(
     }
 
     const positions = await Position.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ buyedAt: -1 })
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit))
       .lean();
 
     const totalCount = await Position.countDocuments(filter);
+    const totalClosed = await Position.countDocuments({ status: 'closed', userId: req.user?._id });
+    const totalOpen = await Position.countDocuments({ status: 'open', userId: req.user?._id });
 
     // Clean positions data and remove undefined properties
     const cleanedPositions = positions.map((position: any) => {
@@ -78,8 +80,8 @@ export default async function handler(
 
     // Calculate statistics for the response
     const totalPositions = totalCount;
-    const activePositions = positions.filter(p => p.status?.toLowerCase() === 'open').length;
-    const closedPositions = positions.filter(p => p.status?.toLowerCase() === 'closed').length;
+    const activePositions = totalOpen;
+    const closedPositions = totalClosed;
 
     res.status(200).json({
       positions: cleanedPositions,

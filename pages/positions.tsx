@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/router'
 import { useAuth } from '@/contexts/AuthContext'
 import NavigationDashboard from '@/components/NavigationDashboard'
@@ -67,8 +67,8 @@ const calculatePnL = (position: Position, currentPrice?: number): { pnl: number,
   // In trading signals, we typically assume BUY positions unless specified otherwise
   const side: 'BUY' | 'SELL' = 'BUY';
   
-  // Default quantity to 1 if not provided (for percentage calculations)
-  const quantity = position.quantity || 1;
+  // Use margin as the investment amount for PnL calculations
+  const margin = position.margin || 0;
   
   let pnl = 0;
   let pnlPercentage = 0;
@@ -78,19 +78,23 @@ const calculatePnL = (position: Position, currentPrice?: number): { pnl: number,
   if (normalizedStatus === 'CLOSED' && position.exitPrice) {
     // Use exit price for closed positions
     if (side === 'BUY') {
-      pnl = (position.exitPrice - position.entryPrice) * Math.abs(quantity);
+      // For BUY positions: PnL = margin * ((exitPrice - entryPrice) / entryPrice)
+      pnl = margin * ((position.exitPrice - position.entryPrice) / position.entryPrice);
     } else {
-      pnl = (position.entryPrice - position.exitPrice) * Math.abs(quantity);
+      // For SELL positions: PnL = margin * ((entryPrice - exitPrice) / entryPrice)
+      pnl = margin * ((position.entryPrice - position.exitPrice) / position.entryPrice);
     }
-    pnlPercentage = (pnl / (position.entryPrice * Math.abs(quantity))) * 100;
+    pnlPercentage = margin > 0 ? (pnl / margin) * 100 : 0;
   } else if (normalizedStatus === 'OPEN' && currentPrice) {
-    // Use current price for open positions
+    // Use current price for open positions (prefer real-time price if available)
     if (side === 'BUY') {
-      pnl = (currentPrice - position.entryPrice) * Math.abs(quantity);
+      // For BUY positions: PnL = margin * ((currentPrice - entryPrice) / entryPrice)
+      pnl = margin * ((currentPrice - position.entryPrice) / position.entryPrice);
     } else {
-      pnl = (position.entryPrice - currentPrice) * Math.abs(quantity);
+      // For SELL positions: PnL = margin * ((entryPrice - currentPrice) / entryPrice)
+      pnl = margin * ((position.entryPrice - currentPrice) / position.entryPrice);
     }
-    pnlPercentage = (pnl / (position.entryPrice * Math.abs(quantity))) * 100;
+    pnlPercentage = margin > 0 ? (pnl / margin) * 100 : 0;
   }
   
   return { pnl, pnlPercentage, side };
@@ -106,6 +110,83 @@ export default function PositionsPage() {
   const [sortBy, setSortBy] = useState<'date' | 'pnl' | 'symbol'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState('')
+  const [realTimePrices, setRealTimePrices] = useState<Record<string, number>>({})
+  const wsRef = useRef<WebSocket | null>(null)
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [wsConnected, setWsConnected] = useState(false)
+
+  // WebSocket functions for real-time price updates
+  const connectToWebSocket = useCallback((symbols: string[]) => {
+    if (symbols.length === 0) return;
+
+    // Close existing connection
+    if (wsRef.current) {
+      wsRef.current.close();
+    }
+
+    // Create streams for all symbols
+    const streams = symbols.map(symbol => `${symbol.toLowerCase()}@ticker`).join('/');
+    const wsUrl = `wss://stream.binance.com:9443/ws/${streams}`;
+
+    try {
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log('Binance WebSocket connected for symbols:', symbols);
+        setWsConnected(true);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          // Handle single ticker data
+          if (data.s && data.c) {
+            setRealTimePrices(prev => ({
+              ...prev,
+              [data.s]: parseFloat(data.c)
+            }));
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      ws.onclose = (event) => {
+        console.log('WebSocket closed:', event.code, event.reason);
+        setWsConnected(false);
+        
+        // Attempt to reconnect after 5 seconds if not intentionally closed
+        if (event.code !== 1000 && symbols.length > 0) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            console.log('Attempting to reconnect WebSocket...');
+            connectToWebSocket(symbols);
+          }, 5000);
+        }
+      };
+    } catch (error) {
+      console.error('Error creating WebSocket connection:', error);
+    }
+  }, []);
+
+  const disconnectWebSocket = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    
+    if (wsRef.current) {
+      wsRef.current.close(1000); // Normal closure
+      wsRef.current = null;
+    }
+    
+    setWsConnected(false);
+  }, []);
 
   // Calculate statistics from positions
   const calculateStatistics = (positionsData: Position[]) => {
@@ -114,12 +195,19 @@ export default function PositionsPage() {
     const closedTrades = positionsData.filter(p => p.status.toUpperCase() === 'CLOSED').length;
     
     let totalPnl = 0;
+    let totalMargin = 0;
+    let activeMargin = 0;
     let winningTrades = 0;
     let losingTrades = 0;
     
     positionsData.forEach(position => {
       const { pnl } = calculatePnL(position);
       totalPnl += pnl;
+      totalMargin += position.margin || 0;
+      
+      if (position.status.toUpperCase() === 'OPEN') {
+        activeMargin += position.margin || 0;
+      }
       
       if (position.status.toUpperCase() === 'CLOSED') {
         if (pnl > 0) winningTrades++;
@@ -134,6 +222,8 @@ export default function PositionsPage() {
       activeTrades,
       closedTrades,
       totalPnl,
+      totalMargin,
+      activeMargin,
       winningTrades,
       losingTrades,
       winRate
@@ -146,7 +236,12 @@ export default function PositionsPage() {
       return
     }
     fetchPositions()
-  }, [user, router])
+    
+    // Cleanup WebSocket on component unmount
+    return () => {
+      disconnectWebSocket()
+    }
+  }, [user, router, disconnectWebSocket])
 
   const fetchPositions = async () => {
     try {
@@ -189,11 +284,32 @@ export default function PositionsPage() {
     }
   }
 
+  // WebSocket effect to connect when positions change
+  useEffect(() => {
+    if (positions?.positions && positions.positions.length > 0) {
+      // Get unique symbols from active positions
+      const activeSymbols = positions.positions
+        .filter(pos => pos.status.toUpperCase() === 'OPEN')
+        .map(pos => pos.symbol)
+        .filter((symbol, index, arr) => arr.indexOf(symbol) === index); // Remove duplicates
+
+      if (activeSymbols.length > 0) {
+        connectToWebSocket(activeSymbols);
+      } else {
+        disconnectWebSocket();
+      }
+    } else {
+      disconnectWebSocket();
+    }
+  }, [positions, connectToWebSocket, disconnectWebSocket]);
+
   // Enhanced positions with calculated PnL
   const enhancedPositions = positions?.positions?.map(position => {
-    const { pnl, pnlPercentage, side } = calculatePnL(position);
+    const currentPrice = realTimePrices[position.symbol] || position.currentPrice;
+    const { pnl, pnlPercentage, side } = calculatePnL(position, currentPrice);
     return {
       ...position,
+      currentPrice,
       pnl,
       pnlPercentage,
       side
@@ -346,9 +462,9 @@ export default function PositionsPage() {
             {[
               { label: 'Total Positions', value: positions?.totalCount || 0, icon: Activity, color: 'text-white' },
               { label: 'Active Positions', value: positions?.activeCount || 0, icon: Play, color: 'text-secondary-400' },
-              { label: 'Closed Positions', value: positions?.closedCount || 0, icon: Pause, color: 'text-gray-400' },
+              { label: 'Active Margin', value: `$${statistics.activeMargin.toFixed(2)}`, icon: DollarSign, color: 'text-blue-400' },
               { label: 'Win Rate', value: `${statistics.winRate.toFixed(1)}%`, icon: Target, color: 'text-accent-400' },
-              { label: 'Total P&L', value: `$${statistics.totalPnl.toFixed(2)}`, icon: DollarSign, color: statistics.totalPnl >= 0 ? 'text-success-400' : 'text-red-400' }
+              { label: 'Total P&L', value: `$${statistics.totalPnl.toFixed(2)}`, icon: TrendingUp, color: statistics.totalPnl >= 0 ? 'text-success-400' : 'text-red-400' }
             ].map((stat, index) => (
               <motion.div 
                 key={index}
@@ -370,45 +486,6 @@ export default function PositionsPage() {
               </motion.div>
             ))}
           </div>
-
-          {/* Comprehensive Trading Statistics */}
-          <motion.div 
-            className="bg-primary-900/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-primary-800/50"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.0 }}
-          >
-            <div className="px-6 py-4 border-b border-primary-800/50 bg-gradient-to-r from-secondary-500/10 to-secondary-600/10 rounded-t-2xl">
-              <div className="flex items-center">
-                <BarChart3 className="w-6 h-6 text-secondary-400 mr-3" />
-                <h3 className="text-lg font-semibold text-white">Trading Performance Analytics</h3>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                {[
-                  { label: 'Total Trades', value: statistics.totalTrades, icon: Activity, color: 'text-white' },
-                  { label: 'Active Trades', value: statistics.activeTrades, icon: Play, color: 'text-secondary-400' },
-                  { label: 'Winning Trades', value: statistics.winningTrades, icon: TrendingUp, color: 'text-success-400' },
-                  { label: 'Losing Trades', value: statistics.losingTrades, icon: TrendingDown, color: 'text-red-400' },
-                  { label: 'Success Rate', value: `${statistics.winRate.toFixed(1)}%`, icon: Target, color: 'text-accent-400' }
-                ].map((stat, index) => (
-                  <motion.div 
-                    key={index}
-                    className="text-center p-4 bg-primary-800/30 rounded-xl border border-primary-700/50"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 1.1 + index * 0.1 }}
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    <stat.icon className={`w-8 h-8 mx-auto mb-2 ${stat.color}`} />
-                    <p className="text-sm text-gray-400 mb-1">{stat.label}</p>
-                    <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
 
           {/* Filters and Search */}
           <motion.div 
@@ -483,6 +560,12 @@ export default function PositionsPage() {
                   <h3 className="text-lg font-semibold text-white">
                     Trading Positions ({sortedPositions.length})
                   </h3>
+                  {wsConnected && (
+                    <div className="ml-3 flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <span className="text-xs text-green-400">Live Prices</span>
+                    </div>
+                  )}
                 </div>
                 {statistics.winRate > 0 && (
                   <div className="flex items-center space-x-2">
@@ -504,9 +587,6 @@ export default function PositionsPage() {
                         Symbol
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Side
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -516,7 +596,10 @@ export default function PositionsPage() {
                         Current Price
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                        Quantity
+                        Limit Price
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Margin
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         P&L
@@ -548,14 +631,6 @@ export default function PositionsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            position.side === 'BUY' ? 'bg-success-500/20 text-success-400' : 'bg-red-500/20 text-red-400'
-                          }`}>
-                            {position.side === 'BUY' ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
-                            {position.side}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             position.status.toUpperCase() === 'OPEN' ? 'bg-secondary-500/20 text-secondary-400' : 'bg-gray-500/20 text-gray-400'
                           }`}>
                             {position.status.toUpperCase() === 'OPEN' ? <Play className="w-3 h-3 mr-1" /> : <Pause className="w-3 h-3 mr-1" />}
@@ -566,10 +641,22 @@ export default function PositionsPage() {
                           ${position.entryPrice.toFixed(4)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                          {position.currentPrice ? `$${position.currentPrice.toFixed(4)}` : '-'}
+                          <div className="flex items-center space-x-2">
+                            <span>
+                              {position.currentPrice ? `$${position.currentPrice.toFixed(4)}` : '-'}
+                            </span>
+                            {realTimePrices[position.symbol] && position.status.toUpperCase() === 'OPEN' && (
+                              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" title="Live price"></div>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                          {position.quantity || 1}
+                          ${position.limitPrice.toFixed(4)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                          <span className="font-medium text-blue-400">
+                            ${position.margin.toFixed(2)}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`text-sm font-medium ${
