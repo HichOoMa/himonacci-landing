@@ -18,7 +18,9 @@ import {
   BarChart3,
   Search,
   ArrowUpDown,
-  Shield
+  Shield,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -53,11 +55,55 @@ interface PositionsData {
   totalCount: number
   activeCount: number
   closedCount: number
+  statistics: {
+    totalPnl: number
+    todayPnl: number
+    activeMargin: number
+    totalMargin: number
+    winningTrades: number
+    losingTrades: number
+    winRate: number
+    todayPositionsCount: number
+  }
   pagination: {
     page: number
     limit: number
     totalCount: number
     totalPages: number
+  }
+}
+
+interface AccountData {
+  user: {
+    id: string
+    email: string
+    isAutoTradingEnabled: boolean
+    isAutoTradingAllowed: boolean
+    bnbBurnEnabled: boolean
+    hasApiKeys: boolean
+    subscriptionStatus: string
+  }
+  binanceAccount?: {
+    accountType: string
+    canTrade: boolean
+    canDeposit: boolean
+    balances: Array<{
+      asset: string
+      free: string
+      locked: string
+      totalBalance: string
+      usdtValue: string
+    }>
+    totalWalletBalanceUSDT: string
+  }
+  binanceError?: string
+  trading: {
+    totalTrades: number
+    activeTrades: number
+    winningTrades: number
+    losingTrades: number
+    totalPnl: string
+    winRate: string
   }
 }
 
@@ -104,12 +150,15 @@ export default function PositionsPage() {
   const { user } = useAuth()
   const router = useRouter()
   const [positions, setPositions] = useState<PositionsData | null>(null)
+  const [accountData, setAccountData] = useState<AccountData | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [filter, setFilter] = useState<'all' | 'active' | 'closed'>('all')
+  const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all')
   const [sortBy, setSortBy] = useState<'date' | 'pnl' | 'symbol'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
   const [realTimePrices, setRealTimePrices] = useState<Record<string, number>>({})
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -188,68 +237,40 @@ export default function PositionsPage() {
     setWsConnected(false);
   }, []);
 
-  // Calculate statistics from positions
-  const calculateStatistics = (positionsData: Position[]) => {
-    const totalTrades = positionsData.length;
-    const activeTrades = positionsData.filter(p => p.status.toUpperCase() === 'OPEN').length;
-    const closedTrades = positionsData.filter(p => p.status.toUpperCase() === 'CLOSED').length;
-    
-    let totalPnl = 0;
-    let totalMargin = 0;
-    let activeMargin = 0;
-    let winningTrades = 0;
-    let losingTrades = 0;
-    
-    positionsData.forEach(position => {
-      const { pnl } = calculatePnL(position);
-      totalPnl += pnl;
-      totalMargin += position.margin || 0;
-      
-      if (position.status.toUpperCase() === 'OPEN') {
-        activeMargin += position.margin || 0;
-      }
-      
-      if (position.status.toUpperCase() === 'CLOSED') {
-        if (pnl > 0) winningTrades++;
-        else if (pnl < 0) losingTrades++;
-      }
-    });
-    
-    const winRate = closedTrades > 0 ? (winningTrades / closedTrades) * 100 : 0;
-    
-    return {
-      totalTrades,
-      activeTrades,
-      closedTrades,
-      totalPnl,
-      totalMargin,
-      activeMargin,
-      winningTrades,
-      losingTrades,
-      winRate
-    };
-  };
-
   useEffect(() => {
     if (!user) {
       router.push('/login')
       return
     }
-    fetchPositions()
+    fetchPositions(1, filter !== 'all' ? filter : undefined)
+    fetchAccountData()
+    setCurrentPage(1)
     
     // Cleanup WebSocket on component unmount
     return () => {
       disconnectWebSocket()
     }
-  }, [user, router, disconnectWebSocket])
+  }, [user, router, filter, pageSize, disconnectWebSocket])
 
-  const fetchPositions = async () => {
+  // Separate effect for page changes
+  useEffect(() => {
+    if (user && currentPage > 1) {
+      fetchPositions(currentPage, filter !== 'all' ? filter : undefined)
+    }
+  }, [currentPage])
+
+  const fetchPositions = async (page: number = currentPage, status?: string) => {
     try {
       setRefreshing(true)
       const token = localStorage.getItem('token')
       if (!token) return
       
-      const response = await fetch('/api/trading/positions', {
+      let url = `/api/trading/positions?page=${page}&limit=${pageSize}`
+      if (status && status !== 'all') {
+        url += `&status=${status}`
+      }
+      
+      const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -284,6 +305,28 @@ export default function PositionsPage() {
     }
   }
 
+  const fetchAccountData = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      
+      const response = await fetch('/api/profile/account-stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setAccountData(data)
+      } else {
+        console.error('Failed to fetch account data')
+      }
+    } catch (error) {
+      console.error('Failed to fetch account data:', error)
+    }
+  }
+
   // WebSocket effect to connect when positions change
   useEffect(() => {
     if (positions?.positions && positions.positions.length > 0) {
@@ -303,7 +346,7 @@ export default function PositionsPage() {
     }
   }, [positions, connectToWebSocket, disconnectWebSocket]);
 
-  // Enhanced positions with calculated PnL
+  // Enhanced positions with calculated PnL (only for display purposes now, real stats come from API)
   const enhancedPositions = positions?.positions?.map(position => {
     const currentPrice = realTimePrices[position.symbol] || position.currentPrice;
     const { pnl, pnlPercentage, side } = calculatePnL(position, currentPrice);
@@ -316,20 +359,23 @@ export default function PositionsPage() {
     };
   }) || [];
 
-  const statistics = calculateStatistics(enhancedPositions);
+  const statistics = positions?.statistics || {
+    totalPnl: 0,
+    todayPnl: 0,
+    activeMargin: 0,
+    totalMargin: 0,
+    winningTrades: 0,
+    losingTrades: 0,
+    winRate: 0,
+    todayPositionsCount: 0
+  };
 
-  const filteredPositions = enhancedPositions.filter(position => {
-    const normalizedStatus = position.status.toUpperCase();
-    const matchesFilter = filter === 'all' || 
-      (filter === 'active' && normalizedStatus === 'OPEN') ||
-      (filter === 'closed' && normalizedStatus === 'CLOSED')
-    
-    const matchesSearch = position.symbol.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    return matchesFilter && matchesSearch
+  // Use positions directly since filtering is now done server-side for pagination
+  const displayPositions = enhancedPositions.filter(position => {
+    return position.symbol.toLowerCase().includes(searchTerm.toLowerCase())
   });
 
-  const sortedPositions = [...filteredPositions].sort((a, b) => {
+  const sortedPositions = [...displayPositions].sort((a, b) => {
     let aValue: any, bValue: any
     
     switch (sortBy) {
@@ -443,7 +489,10 @@ export default function PositionsPage() {
               Monitor your trading performance and position history
             </motion.p>
             <motion.button
-              onClick={fetchPositions}
+              onClick={() => {
+                fetchPositions(currentPage, filter !== 'all' ? filter : undefined)
+                fetchAccountData()
+              }}
               disabled={refreshing}
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500 disabled:opacity-50 transition-all duration-200"
               whileHover={{ scale: 1.05 }}
@@ -458,11 +507,12 @@ export default function PositionsPage() {
           </div>
 
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
             {[
               { label: 'Total Positions', value: positions?.totalCount || 0, icon: Activity, color: 'text-white' },
               { label: 'Active Positions', value: positions?.activeCount || 0, icon: Play, color: 'text-secondary-400' },
               { label: 'Active Margin', value: `$${statistics.activeMargin.toFixed(2)}`, icon: DollarSign, color: 'text-blue-400' },
+              { label: 'Today\'s P&L', value: `$${statistics.todayPnl.toFixed(2)}`, icon: Calendar, color: statistics.todayPnl >= 0 ? 'text-success-400' : 'text-red-400' },
               { label: 'Win Rate', value: `${statistics.winRate.toFixed(1)}%`, icon: Target, color: 'text-accent-400' },
               { label: 'Total P&L', value: `$${statistics.totalPnl.toFixed(2)}`, icon: TrendingUp, color: statistics.totalPnl >= 0 ? 'text-success-400' : 'text-red-400' }
             ].map((stat, index) => (
@@ -487,6 +537,100 @@ export default function PositionsPage() {
             ))}
           </div>
 
+          {/* Account Overview */}
+          {accountData?.binanceAccount && (
+            <motion.div 
+              className="bg-primary-900/50 backdrop-blur-sm rounded-2xl shadow-2xl p-6 border border-primary-800/50"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white">Account Overview</h3>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                  <span className="text-sm text-gray-300">Connected to Binance</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">USDT Available</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    ${parseFloat(accountData.binanceAccount.balances.find(b => b.asset === 'USDT')?.free || '0').toFixed(2)}
+                  </p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">Total Wallet (USDT)</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    ${accountData.binanceAccount.totalWalletBalanceUSDT}
+                  </p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">Account Type</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {accountData.binanceAccount.accountType}
+                  </p>
+                </div>
+              </div>
+
+              {/* Account Status */}
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="flex items-center justify-between bg-primary-800/30 p-3 rounded-lg">
+                  <span className="text-sm text-gray-300">Can Trade:</span>
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    accountData.binanceAccount.canTrade
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}>
+                    {accountData.binanceAccount.canTrade ? "Yes" : "No"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between bg-primary-800/30 p-3 rounded-lg">
+                  <span className="text-sm text-gray-300">Can Deposit:</span>
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    accountData.binanceAccount.canDeposit
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }`}>
+                    {accountData.binanceAccount.canDeposit ? "Yes" : "No"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between bg-primary-800/30 p-3 rounded-lg">
+                  <span className="text-sm text-gray-300">Auto Trading:</span>
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    accountData.user.isAutoTradingEnabled
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}>
+                    {accountData.user.isAutoTradingEnabled ? "Enabled" : "Disabled"}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Binance Error */}
+          {accountData?.binanceError && (
+            <motion.div 
+              className="bg-red-900/20 border border-red-500/30 rounded-2xl p-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <div className="flex items-start space-x-3">
+                <Shield className="w-6 h-6 text-red-400 mt-1" />
+                <div>
+                  <h3 className="text-lg font-semibold text-red-400">Binance Connection Error</h3>
+                  <p className="text-red-300 mt-1">{accountData.binanceError}</p>
+                  <p className="text-sm text-red-400 mt-2">
+                    Please check your API credentials in your profile settings.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* Filters and Search */}
           <motion.div 
             className="bg-primary-900/50 backdrop-blur-sm rounded-2xl shadow-2xl p-6 border border-primary-800/50"
@@ -501,11 +645,14 @@ export default function PositionsPage() {
                   <Filter className="w-5 h-5 text-gray-400" />
                   <select
                     value={filter}
-                    onChange={(e) => setFilter(e.target.value as 'all' | 'active' | 'closed')}
+                    onChange={(e) => {
+                      setFilter(e.target.value as 'all' | 'open' | 'closed');
+                      setCurrentPage(1);
+                    }}
                     className="bg-primary-800/50 border border-primary-700/50 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent"
                   >
                     <option value="all">All Positions</option>
-                    <option value="active">Active Only</option>
+                    <option value="open">Open Only</option>
                     <option value="closed">Closed Only</option>
                   </select>
                 </div>
@@ -530,6 +677,16 @@ export default function PositionsPage() {
                     <option value="symbol-desc">Symbol Z-A</option>
                   </select>
                 </div>
+
+                {/* Quick Stats */}
+                <div className="flex items-center space-x-4 text-sm text-gray-400">
+                  <span>Page {currentPage} of {positions?.pagination?.totalPages || 1}</span>
+                  {(positions?.statistics?.todayPositionsCount || 0) > 0 && (
+                    <span className="text-accent-400">
+                      {positions?.statistics?.todayPositionsCount || 0} today
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Search */}
@@ -542,17 +699,33 @@ export default function PositionsPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-primary-800/50 border border-primary-700/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent"
                 />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    ×
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
 
           {/* Positions Table */}
           <motion.div 
-            className="bg-primary-900/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-primary-800/50"
+            className="bg-primary-900/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-primary-800/50 relative"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.0 }}
           >
+            {refreshing && (
+              <div className="absolute inset-0 bg-primary-900/75 backdrop-blur-sm rounded-2xl z-10 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-secondary-600 border-t-transparent mx-auto mb-2"></div>
+                  <p className="text-gray-300 text-sm">Loading positions...</p>
+                </div>
+              </div>
+            )}
             <div className="px-6 py-4 border-b border-primary-800/50 bg-gradient-to-r from-success-500/10 to-success-600/10 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -567,14 +740,6 @@ export default function PositionsPage() {
                     </div>
                   )}
                 </div>
-                {statistics.winRate > 0 && (
-                  <div className="flex items-center space-x-2">
-                    <Target className="w-5 h-5 text-accent-400" />
-                    <span className="text-accent-400 font-medium">
-                      Win Rate: {statistics.winRate.toFixed(1)}%
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
             
@@ -689,6 +854,94 @@ export default function PositionsPage() {
                 </div>
               )}
             </div>
+            
+            {/* Pagination Controls */}
+            {positions?.pagination && positions.pagination.totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-primary-800/50 bg-primary-900/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-400">
+                      Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, positions.pagination.totalCount)} of {positions.pagination.totalCount} positions
+                    </span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value))
+                        setCurrentPage(1)
+                      }}
+                      className="bg-primary-800/50 border border-primary-700/50 rounded-lg px-3 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                    >
+                      <option value={5}>5 per page</option>
+                      <option value={10}>10 per page</option>
+                      <option value={20}>20 per page</option>
+                      <option value={50}>50 per page</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-2 text-sm font-medium text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      First
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-2 text-sm font-medium text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    
+                    {/* Page numbers */}
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, positions.pagination.totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (positions.pagination.totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= positions.pagination.totalPages - 2) {
+                          pageNum = positions.pagination.totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                              currentPage === pageNum
+                                ? 'bg-secondary-500 text-white'
+                                : 'text-gray-400 hover:text-white hover:bg-primary-800/50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, positions.pagination.totalPages))}
+                      disabled={currentPage === positions.pagination.totalPages}
+                      className="px-3 py-2 text-sm font-medium text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(positions.pagination.totalPages)}
+                      disabled={currentPage === positions.pagination.totalPages}
+                      className="px-3 py-2 text-sm font-medium text-gray-400 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Last
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         </motion.div>
       </div>

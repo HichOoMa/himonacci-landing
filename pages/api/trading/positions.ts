@@ -78,16 +78,71 @@ export default async function handler(
       return cleanedPosition;
     });
 
-    // Calculate statistics for the response
-    const totalPositions = totalCount;
-    const activePositions = totalOpen;
-    const closedPositions = totalClosed;
+    // Calculate today's start date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Get all positions for statistics (not paginated)
+    const allPositions = await Position.find({ userId: req.user?._id }).lean();
+    const todayPositions = allPositions.filter((pos: any) => {
+      const posDate = new Date(pos.buyedAt || pos.createdAt);
+      return posDate >= today;
+    });
+
+    // Calculate statistics
+    let totalPnl = 0;
+    let todayPnl = 0;
+    let activeMargin = 0;
+    let totalMargin = 0;
+    let winningTrades = 0;
+    let losingTrades = 0;
+
+    allPositions.forEach((position: any) => {
+      const margin = position.margin || 0;
+      totalMargin += margin;
+
+      if (position.status === 'open') {
+        activeMargin += margin;
+      }
+
+      // Calculate PnL for closed positions
+      if (position.status === 'closed' && position.exitPrice && position.entryPrice) {
+        const pnl = margin * ((position.exitPrice - position.entryPrice) / position.entryPrice);
+        totalPnl += pnl;
+        
+        if (pnl > 0) winningTrades++;
+        else if (pnl < 0) losingTrades++;
+      }
+    });
+
+    // Calculate today's PnL
+    todayPositions.forEach((position: any) => {
+      const margin = position.margin || 0;
+      
+      if (position.status === 'closed' && position.exitPrice && position.entryPrice) {
+        const pnl = margin * ((position.exitPrice - position.entryPrice) / position.entryPrice);
+        todayPnl += pnl;
+      }
+    });
+
+    const totalClosedTrades = winningTrades + losingTrades;
+    const winRate = totalClosedTrades > 0 ? (winningTrades / totalClosedTrades) * 100 : 0;
 
     res.status(200).json({
       positions: cleanedPositions,
-      totalCount: totalPositions,
-      activeCount: activePositions,
-      closedCount: closedPositions,
+      totalCount,
+      activeCount: totalOpen,
+      closedCount: totalClosed,
+      statistics: {
+        totalPnl,
+        todayPnl,
+        activeMargin,
+        totalMargin,
+        winningTrades,
+        losingTrades,
+        winRate,
+        todayPositionsCount: todayPositions.length
+      },
       pagination: {
         page: Number(page),
         limit: Number(limit),
