@@ -82,6 +82,11 @@ interface AccountData {
     bnbBurnEnabled: boolean
     hasApiKeys: boolean
     subscriptionStatus: string
+    startBalance?: number
+    targetBalance?: number
+    primary?: number
+    secondary?: number
+    periodEndTime?: string
   }
   binanceAccount?: {
     accountType: string
@@ -163,6 +168,22 @@ export default function PositionsPage() {
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [wsConnected, setWsConnected] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState<number>(0)
+
+  // Helper function to format time remaining
+  const formatTimeRemaining = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${remainingSeconds}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${remainingSeconds}s`;
+    } else {
+      return `${remainingSeconds}s`;
+    }
+  };
 
   // WebSocket functions for real-time price updates
   const connectToWebSocket = useCallback((symbols: string[]) => {
@@ -236,6 +257,29 @@ export default function PositionsPage() {
     
     setWsConnected(false);
   }, []);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (accountData?.user?.periodEndTime) {
+      const remainingSeconds = Math.floor(
+        new Date(accountData.user.periodEndTime).getTime() / 1000 -
+          Date.now() / 1000
+      );
+      setTimeRemaining(remainingSeconds);
+
+      const timer = setInterval(() => {
+        setTimeRemaining((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [accountData?.user?.periodEndTime]);
 
   useEffect(() => {
     if (!user) {
@@ -553,7 +597,7 @@ export default function PositionsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 <div className="bg-green-50 p-4 rounded-lg">
                   <p className="text-sm text-gray-600">USDT Available</p>
                   <p className="text-2xl font-bold text-green-600">
@@ -566,16 +610,63 @@ export default function PositionsPage() {
                     ${accountData.binanceAccount.totalWalletBalanceUSDT}
                   </p>
                 </div>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">Start Balance</p>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    ${accountData.user.startBalance || "0.00"}
+                  </p>
+                </div>
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-600">Account Type</p>
+                  <p className="text-sm text-gray-600">Target Balance</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {accountData.binanceAccount.accountType}
+                    ${accountData.user.targetBalance || "0.00"}
+                  </p>
+                </div>
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">Primary Count</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {accountData.user.primary || 0}
+                  </p>
+                </div>
+                <div className="bg-teal-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600">Secondary Count</p>
+                  <p className="text-2xl font-bold text-teal-600">
+                    {accountData.user.secondary || 0}
                   </p>
                 </div>
               </div>
 
+              {/* Period Countdown */}
+              {accountData.user.periodEndTime && (
+                <div className="bg-indigo-50 p-4 rounded-lg mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Next Period Countdown
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">
+                        Next Period Starts:
+                      </p>
+                      <p className="text-lg font-medium text-gray-900">
+                        {new Date(
+                          accountData.user.periodEndTime
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">
+                        Time Remaining:
+                      </p>
+                      <p className="text-2xl font-bold text-indigo-600">
+                        {formatTimeRemaining(timeRemaining || 0)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Account Status */}
-              <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="flex items-center justify-between bg-primary-800/30 p-3 rounded-lg">
                   <span className="text-sm text-gray-300">Can Trade:</span>
                   <span className={`px-2 py-1 text-xs rounded-full ${
@@ -604,6 +695,12 @@ export default function PositionsPage() {
                       : "bg-gray-100 text-gray-800"
                   }`}>
                     {accountData.user.isAutoTradingEnabled ? "Enabled" : "Disabled"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between bg-primary-800/30 p-3 rounded-lg">
+                  <span className="text-sm text-gray-300">Account Type:</span>
+                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                    {accountData.binanceAccount.accountType}
                   </span>
                 </div>
               </div>

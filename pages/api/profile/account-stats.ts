@@ -4,6 +4,10 @@ import Position from '@/models/position'
 import connectDB from '@/lib/mongodb'
 import Binance from 'binance-api-node'
 import Authenticate, { AuthenticatedRequest } from '@/utils/Authentificate'
+import TradingSettings from '@/models/TradingSettings'
+import AccountHistory from '@/models/AccountHistory'
+import TradingPeriod from '@/models/TradingPeriod'
+import { ObjectId } from 'mongodb'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here'
 
@@ -88,6 +92,25 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
         binanceError = 'Error connecting to Binance API'
       }
     }
+    
+    // Get additional user data (same as admin user-binance-account)
+    const lastHistories = await AccountHistory.findOne({
+      userId: user._id,
+    }).sort({ createdAt: -1 });
+
+    const defaultTradingSetting = await TradingSettings.findOne({
+      isDefault: true,
+    });
+
+    const tradingSettings = user.tradingSettingsId || defaultTradingSetting;
+
+    const now = new Date();
+    const tradingPeriod = await TradingPeriod.findOne({
+      userId: new ObjectId(user._id),
+      startTime: { $lte: now },
+      endTime: { $gte: now },
+    }).sort({ startTime: -1 });
+    
     // Get trading statistics
     const positions = await Position.find({ userId: user._id })
     const activePositions = positions.filter(p => p.status === 'OPEN')
@@ -114,6 +137,16 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
         bnbBurnEnabled: user.bnbBurnEnabled !== false, // Default to true if undefined
         hasApiKeys: !!(user.binanceApiKey && user.binanceApiSecret),
         subscriptionStatus: user.subscriptionStatus,
+        startBalance: lastHistories
+          ? lastHistories.accountBalance?.totalUSDTValue.toFixed(2) || "0.00"
+          : "0.00",
+        targetBalance: lastHistories && tradingSettings
+          ? (lastHistories?.accountBalance?.totalUSDTValue *
+              (1 + (tradingSettings.closeAllProfitThreshold * 1.1) / 100)).toFixed(2) || "0.00"
+          : "0.00",
+        primary: tradingPeriod?.primaryCount || 0,
+        secondary: tradingPeriod?.secondaryCount || 0,
+        periodEndTime: tradingPeriod?.endTime || null,
       },
       binanceAccount: binanceAccount ? {
         accountType: binanceAccount.accountType,
