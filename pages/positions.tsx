@@ -532,6 +532,23 @@ export default function PositionsPage() {
             >
               Monitor your trading performance and position history
             </motion.p>
+            
+            {/* Period Countdown in Header */}
+            {accountData?.user?.periodEndTime && timeRemaining > 0 && (
+              <motion.div
+                className="mb-4 inline-flex items-center space-x-3 bg-indigo-900/30 border border-indigo-500/30 rounded-lg px-4 py-2"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+              >
+                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
+                <span className="text-indigo-300 text-sm">Next Period in:</span>
+                <span className="text-indigo-200 font-mono font-bold">
+                  {formatTimeRemaining(timeRemaining)}
+                </span>
+              </motion.div>
+            )}
+            
             <motion.button
               onClick={() => {
                 fetchPositions(currentPage, filter !== 'all' ? filter : undefined)
@@ -652,6 +669,9 @@ export default function PositionsPage() {
                           accountData.user.periodEndTime
                         ).toLocaleString()}
                       </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(accountData.user.periodEndTime).toLocaleDateString()} at {new Date(accountData.user.periodEndTime).toLocaleTimeString()}
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600">
@@ -660,6 +680,26 @@ export default function PositionsPage() {
                       <p className="text-2xl font-bold text-indigo-600">
                         {formatTimeRemaining(timeRemaining || 0)}
                       </p>
+                      {timeRemaining > 0 && (
+                        <div className="mt-2 space-y-1">
+                          <p className="text-xs text-gray-500">
+                            {timeRemaining.toLocaleString()} seconds
+                          </p>
+                          <div className="w-32 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-indigo-600 h-2 rounded-full transition-all duration-1000"
+                              style={{ 
+                                width: timeRemaining > 0 ? `${Math.max(5, (timeRemaining / (24 * 60 * 60)) * 100)}%` : '0%'
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+                      {timeRemaining <= 0 && (
+                        <p className="text-sm text-red-500 mt-1">
+                          Period has ended
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
