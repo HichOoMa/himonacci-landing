@@ -22,7 +22,7 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
     if (authError) return;
 
     await connectDB()
-    const user = await User.findById(req.user?._id).select('+binanceApiKey +binanceApiSecret')
+    const user = await User.findById(req.user?._id).populate('tradingSettingsId').select('+binanceApiKey +binanceApiSecret')
     // Get Binance account info if API keys are configured
     let binanceAccount = null
     let binanceError = null
@@ -128,7 +128,6 @@ export default async function handler(req: AuthenticatedRequest, res: NextApiRes
     const recentPositions = await Position.find({ userId: user._id })
       .sort({ createdAt: -1 })
       .limit(10)
-      console.log(lastHistories, tradingSettings)
     const stats = {
       user: {
         id: user._id,
