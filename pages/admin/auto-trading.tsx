@@ -51,6 +51,211 @@ interface BinanceAccountData {
   binanceError?: string;
 }
 
+interface ChartDataPoint {
+  date: string;
+  value: number;
+  event: string;
+  timestamp: string;
+}
+
+// Simple SVG Line Chart Component
+const USDTLineChart = ({ data }: { data: ChartDataPoint[] }) => {
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-500">
+        No data available
+      </div>
+    );
+  }
+
+  const width = 800;
+  const height = 300;
+  const margin = { top: 20, right: 30, bottom: 40, left: 80 };
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+
+  // Find min and max values
+  const values = data.map(d => d.value);
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const valueRange = maxValue - minValue;
+  const padding = valueRange * 0.1; // 10% padding
+
+  const yMin = Math.max(0, minValue - padding);
+  const yMax = maxValue + padding;
+
+  // Create scales
+  const xScale = (index: number) => (index / (data.length - 1)) * chartWidth;
+  const yScale = (value: number) => chartHeight - ((value - yMin) / (yMax - yMin)) * chartHeight;
+
+  // Create path string
+  const pathData = data.map((point, index) => {
+    const x = xScale(index);
+    const y = yScale(point.value);
+    return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
+
+  // Format value for display
+  const formatValue = (value: number) => `$${value.toFixed(2)}`;
+
+  return (
+    <div className="w-full h-full flex justify-center">
+      <svg width={width} height={height} className="bg-white">
+        {/* Grid lines */}
+        <g transform={`translate(${margin.left}, ${margin.top})`}>
+          {/* Horizontal grid lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const y = chartHeight * ratio;
+            const value = yMax - (yMax - yMin) * ratio;
+            return (
+              <g key={ratio}>
+                <line
+                  x1={0}
+                  y1={y}
+                  x2={chartWidth}
+                  y2={y}
+                  stroke="#e5e7eb"
+                  strokeWidth={1}
+                />
+                <text
+                  x={-10}
+                  y={y + 4}
+                  textAnchor="end"
+                  fontSize="12"
+                  fill="#6b7280"
+                >
+                  {formatValue(value)}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Vertical grid lines */}
+          {data.map((_, index) => {
+            if (index % Math.ceil(data.length / 5) === 0) {
+              const x = xScale(index);
+              return (
+                <line
+                  key={index}
+                  x1={x}
+                  y1={0}
+                  x2={x}
+                  y2={chartHeight}
+                  stroke="#e5e7eb"
+                  strokeWidth={1}
+                />
+              );
+            }
+            return null;
+          })}
+
+          {/* Line path */}
+          <path
+            d={pathData}
+            fill="none"
+            stroke="#3b82f6"
+            strokeWidth={2}
+            className="drop-shadow-sm"
+          />
+
+          {/* Data points */}
+          {data.map((point, index) => {
+            const x = xScale(index);
+            const y = yScale(point.value);
+            return (
+              <g key={index}>
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={4}
+                  fill={point.event === 'auto_trading_enabled' ? '#10b981' : '#ef4444'}
+                  stroke="white"
+                  strokeWidth={2}
+                  className="drop-shadow-sm"
+                />
+                {/* Tooltip on hover */}
+                <g className="opacity-0 hover:opacity-100 transition-opacity">
+                  <rect
+                    x={x - 50}
+                    y={y - 35}
+                    width={100}
+                    height={25}
+                    fill="black"
+                    fillOpacity={0.8}
+                    rx={4}
+                  />
+                  <text
+                    x={x}
+                    y={y - 20}
+                    textAnchor="middle"
+                    fontSize="12"
+                    fill="white"
+                  >
+                    {formatValue(point.value)}
+                  </text>
+                  <text
+                    x={x}
+                    y={y - 8}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fill="white"
+                  >
+                    {new Date(point.date).toLocaleDateString()}
+                  </text>
+                </g>
+              </g>
+            );
+          })}
+
+          {/* X-axis labels */}
+          {data.map((point, index) => {
+            if (index % Math.ceil(data.length / 5) === 0) {
+              const x = xScale(index);
+              return (
+                <text
+                  key={index}
+                  x={x}
+                  y={chartHeight + 25}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="#6b7280"
+                >
+                  {new Date(point.date).toLocaleDateString()}
+                </text>
+              );
+            }
+            return null;
+          })}
+        </g>
+
+        {/* Chart title */}
+        <text
+          x={width / 2}
+          y={15}
+          textAnchor="middle"
+          fontSize="14"
+          fontWeight="bold"
+          fill="#374151"
+        >
+          USDT Balance Timeline
+        </text>
+
+        {/* Y-axis label */}
+        <text
+          x={15}
+          y={height / 2}
+          textAnchor="middle"
+          fontSize="12"
+          fill="#6b7280"
+          transform={`rotate(-90, 15, ${height / 2})`}
+        >
+          Balance (USDT)
+        </text>
+      </svg>
+    </div>
+  );
+};
+
 export default function AdminAutoTradingPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -67,6 +272,10 @@ export default function AdminAutoTradingPage() {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [loadingCloseAll, setLoadingCloseAll] = useState<string | boolean>(false);
   const [closeAllResults, setCloseAllResults] = useState<any>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [selectedUserIdForHistory, setSelectedUserIdForHistory] = useState<string | null>(null);
+  const [historyData, setHistoryData] = useState<any>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || user.role !== "admin")) {
@@ -323,6 +532,51 @@ export default function AdminAutoTradingPage() {
     setBinanceData(null);
   };
 
+  const fetchUserAccountHistory = async (userId: string) => {
+    try {
+      setLoadingHistory(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `/api/admin/user-account-history?userId=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setHistoryData(data.data);
+      } else {
+        const errorData = await response.json();
+        setHistoryData({
+          error: errorData.message || "Error fetching history data",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching user account history:", error);
+      setHistoryData({
+        error: "Error fetching history data",
+      });
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const openHistoryModal = (userId: string) => {
+    setSelectedUserIdForHistory(userId);
+    setShowHistoryModal(true);
+    fetchUserAccountHistory(userId);
+  };
+
+  const closeHistoryModal = () => {
+    setShowHistoryModal(false);
+    setSelectedUserIdForHistory(null);
+    setHistoryData(null);
+  };
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -563,6 +817,12 @@ export default function AdminAutoTradingPage() {
                               className="px-3 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
                             >
                               View Account
+                            </button>
+                            <button
+                              onClick={() => openHistoryModal(user._id)}
+                              className="px-3 py-1 rounded text-xs font-medium bg-purple-100 text-purple-700 hover:bg-purple-200"
+                            >
+                              View Histories
                             </button>
                             {user.isAutoTradingEnabled && (
                               <button
@@ -952,6 +1212,160 @@ export default function AdminAutoTradingPage() {
                     })}
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Account History Modal */}
+        {showHistoryModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Account History
+                  {historyData && !historyData.error && historyData.history?.length > 0 && (
+                    <span className="text-sm font-normal text-gray-600 ml-2">
+                      ({historyData.history.length} records)
+                    </span>
+                  )}
+                </h2>
+                <button
+                  onClick={closeHistoryModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-6">
+                {loadingHistory ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-gray-600">
+                      Loading account history...
+                    </span>
+                  </div>
+                ) : historyData?.error ? (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex">
+                      <svg
+                        className="w-5 h-5 text-red-400"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800">
+                          Error Loading History Data
+                        </h3>
+                        <p className="text-sm text-red-700 mt-1">
+                          {historyData.error}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : historyData && historyData.history ? (
+                  <div className="space-y-6">
+                    {/* Line Chart */}
+                    {historyData.chartData && historyData.chartData.length > 0 && (
+                      <div className="bg-gray-50 p-6 rounded-lg">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                          USDT Balance Over Time
+                        </h3>
+                        <div className="w-full h-80">
+                          <USDTLineChart data={historyData.chartData} />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* History Table */}
+                    {historyData.history.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                          Recent History
+                        </h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                  Date
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                  Event
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                  USDT Value
+                                </th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                  Account Status
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {historyData.history.slice(0, 20).map((record: any, index: number) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                  <td className="px-4 py-2 text-sm text-gray-700">
+                                    {new Date(record.timestamp).toLocaleString()}
+                                  </td>
+                                  <td className="px-4 py-2">
+                                    <span
+                                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                        record.event === 'auto_trading_enabled'
+                                          ? 'bg-green-100 text-green-800'
+                                          : 'bg-red-100 text-red-800'
+                                      }`}
+                                    >
+                                      {record.event === 'auto_trading_enabled' ? 'Enabled' : 'Disabled'}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-2 text-sm font-medium text-gray-900">
+                                    ${record.accountBalance.totalUSDTValue.toFixed(2)}
+                                  </td>
+                                  <td className="px-4 py-2 text-sm text-gray-700">
+                                    <div className="flex space-x-2">
+                                      <span
+                                        className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                                          record.accountInfo.canTrade
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-red-100 text-red-800'
+                                        }`}
+                                      >
+                                        {record.accountInfo.canTrade ? 'Can Trade' : 'No Trade'}
+                                      </span>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No history data available for this user.
+                  </div>
+                )}
               </div>
             </div>
           </div>
