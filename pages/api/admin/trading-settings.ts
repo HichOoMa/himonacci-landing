@@ -65,6 +65,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       closeAllProfitThreshold,
       minExpectedProfit,
       minVolume,
+      trackingDrawDown,
       blacklistedSymbols,
       algorithmPriority,
     } = req.body
@@ -73,7 +74,8 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
     if (!name || !periodDuration || !positionsPerPeriod || 
         reservedPeriodsBalance === undefined || balancePartitions === undefined ||
         !closeAllCheckPeriod || closeAllProfitThreshold === undefined || 
-        minExpectedProfit === undefined || minVolume === undefined) {
+        minExpectedProfit === undefined || minVolume === undefined ||
+        trackingDrawDown === undefined) {
       return res.status(400).json({ message: 'All fields are required' })
     }
 
@@ -88,6 +90,7 @@ async function handlePost(req: NextApiRequest, res: NextApiResponse) {
       closeAllProfitThreshold,
       minExpectedProfit,
       minVolume,
+      trackingDrawDown,
       blacklistedSymbols: blacklistedSymbols || [],
       algorithmPriority: algorithmPriority || {
         candles: {
@@ -137,6 +140,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse) {
       closeAllProfitThreshold,
       minExpectedProfit,
       minVolume,
+      trackingDrawDown,
       blacklistedSymbols,
       algorithmPriority,
     } = req.body
@@ -165,6 +169,7 @@ async function handlePut(req: NextApiRequest, res: NextApiResponse) {
     tradingSettings.closeAllProfitThreshold = closeAllProfitThreshold !== undefined ? closeAllProfitThreshold : tradingSettings.closeAllProfitThreshold
     tradingSettings.minExpectedProfit = minExpectedProfit !== undefined ? minExpectedProfit : tradingSettings.minExpectedProfit
     tradingSettings.minVolume = minVolume !== undefined ? minVolume : tradingSettings.minVolume
+    tradingSettings.trackingDrawDown = trackingDrawDown !== undefined ? trackingDrawDown : tradingSettings.trackingDrawDown
     tradingSettings.blacklistedSymbols = blacklistedSymbols !== undefined ? blacklistedSymbols : tradingSettings.blacklistedSymbols
     tradingSettings.algorithmPriority = algorithmPriority !== undefined ? algorithmPriority : tradingSettings.algorithmPriority
 

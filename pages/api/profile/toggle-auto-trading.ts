@@ -2,6 +2,7 @@ import { NextApiResponse } from "next";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 import AccountHistory from "@/models/AccountHistory";
+import TrackingPeriods from "@/models/TrackingPeriods";
 import Authenticate, { AuthenticatedRequest } from "@/utils/Authentificate";
 import { getAccountSnapshot } from "@/lib/accountSnapshot";
 
@@ -70,6 +71,21 @@ export default async function POST(req: AuthenticatedRequest, res: NextApiRespon
 
         await accountHistory.save();
         console.log('Account snapshot saved successfully');
+
+        const newTrackingPeriod = new TrackingPeriods({
+          userId: user._id,
+          balance: accountSnapshot.totalUSDTValue,
+          startBalance: accountSnapshot.totalUSDTValue,
+          startTime: new Date(),
+          isTrading: true,
+          positions: [],
+          openSymbols: [],
+          primaryCount: 0,
+          secondaryCount: 0
+        });
+
+        await newTrackingPeriod.save();
+
       } catch (snapshotError) {
         console.error('Error capturing account snapshot:', snapshotError);
         return res

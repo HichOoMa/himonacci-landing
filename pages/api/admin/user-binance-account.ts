@@ -56,9 +56,9 @@ export default async function handler(
       startTime: { $lte: now },
       endTime: { $gte: now },
     }).sort({ startTime: -1 });
-    if (!tradingPeriod) {
-      return res.status(404).json({ message: "Trading period not found" });
-    }
+    // if (!tradingPeriod) {
+    //   return res.status(404).json({ message: "Trading period not found" });
+    // }
 
     // Get Binance account info if API keys are configured
     let binanceAccount = null;
@@ -176,9 +176,9 @@ export default async function handler(
           ? (lastHistories?.accountBalance?.totalUSDTValue *
               (1 + (tradingSettings.closeAllProfitThreshold * 1.1) / 100)).toFixed(2) || "0.00"
           : "0.00",
-        primary: tradingPeriod.primaryCount,
-        secondary: tradingPeriod.secondaryCount,
-        periodEndTime: tradingPeriod.endTime,
+        primary: tradingPeriod?.primaryCount || 0,
+        secondary: tradingPeriod?.secondaryCount || 0,
+        periodEndTime: tradingPeriod?.endTime || 0,
       },
       binanceAccount,
       binanceError,

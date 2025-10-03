@@ -30,6 +30,7 @@ export interface ITradingSettings {
   closeAllProfitThreshold: number
   minExpectedProfit: number // Minimum expected profit percentage
   minVolume: number // Minimum trading volume required
+  trackingDrawDown: number // Tracking draw down percentage
   blacklistedSymbols: string[] // List of symbols to exclude from trading
   algorithmPriority?: AlgorithmPriority // Algorithm priority configuration
   createdAt: Date
@@ -88,6 +89,12 @@ const tradingSettingsSchema = new mongoose.Schema<ITradingSettings>(
       type: Number,
       required: [true, 'Minimum volume is required'],
       min: [0, 'Minimum volume must be non-negative'],
+    },
+    trackingDrawDown: {
+      type: Number,
+      required: [true, 'Tracking draw down is required'],
+      min: [0, 'Tracking draw down must be non-negative'],
+      max: [100, 'Tracking draw down must not exceed 100%'],
     },
     blacklistedSymbols: {
       type: [String],

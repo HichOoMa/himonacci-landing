@@ -10,6 +10,7 @@ export interface ITradingPeriod {
   positions?: IPosition[] // Populated positions for queries
   primaryCount: number
   secondaryCount: number
+  trackingDrawDown: number
   createdAt?: Date
   updatedAt?: Date
 }
@@ -49,6 +50,12 @@ const tradingPeriodSchema = new mongoose.Schema<ITradingPeriod>(
       type: Number,
       required: [true, 'Secondary count is required'],
       min: [0, 'Secondary count cannot be negative'],
+      default: 0,
+    },
+    trackingDrawDown: {
+      type: Number,
+      required: [true, 'Tracking draw down is required'],
+      min: [0, 'Tracking draw down cannot be negative'],
       default: 0,
     },
   },

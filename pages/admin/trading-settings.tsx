@@ -11,6 +11,7 @@ import {
   X, 
   Clock, 
   TrendingUp,
+  TrendingDown,
   DollarSign,
   AlertCircle,
   Star,
@@ -60,6 +61,7 @@ interface TradingSettings {
   closeAllProfitThreshold: number
   minExpectedProfit: number
   minVolume: number
+  trackingDrawDown: number
   blacklistedSymbols: string[]
   algorithmPriority?: AlgorithmPriority
   createdAt: string
@@ -77,6 +79,7 @@ interface FormData {
   closeAllProfitThreshold: number
   minExpectedProfit: number
   minVolume: number
+  trackingDrawDown: number
   blacklistedSymbols: string[]
   algorithmPriority: AlgorithmPriority
 }
@@ -171,6 +174,7 @@ export default function TradingSettingsAdmin() {
     closeAllProfitThreshold: 4,
     minExpectedProfit: 5,
     minVolume: 1000,
+    trackingDrawDown: 0,
     blacklistedSymbols: [],
     algorithmPriority: getDefaultAlgorithmPriority(),
   })
@@ -250,6 +254,7 @@ export default function TradingSettingsAdmin() {
       closeAllProfitThreshold: settings.closeAllProfitThreshold,
       minExpectedProfit: settings.minExpectedProfit,
       minVolume: settings.minVolume,
+      trackingDrawDown: settings.trackingDrawDown || 0,
       blacklistedSymbols: settings.blacklistedSymbols || [],
       algorithmPriority: settings.algorithmPriority || getDefaultAlgorithmPriority(),
     })
@@ -295,6 +300,7 @@ export default function TradingSettingsAdmin() {
       closeAllProfitThreshold: 100,
       minExpectedProfit: 5,
       minVolume: 1000,
+      trackingDrawDown: 0,
       blacklistedSymbols: [],
       algorithmPriority: getDefaultAlgorithmPriority(),
     })
@@ -336,6 +342,7 @@ export default function TradingSettingsAdmin() {
       closeAllProfitThreshold: settings.closeAllProfitThreshold,
       minExpectedProfit: settings.minExpectedProfit,
       minVolume: settings.minVolume,
+      trackingDrawDown: settings.trackingDrawDown || 0,
       blacklistedSymbols: settings.blacklistedSymbols || [],
       algorithmPriority: settings.algorithmPriority || getDefaultAlgorithmPriority(),
     })
@@ -648,6 +655,26 @@ export default function TradingSettingsAdmin() {
                         </div>
                         <p className="text-xs text-gray-500">Minimum trading volume required</p>
                       </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        Tracking Drawdown
+                      </label>
+                      <div className="relative">
+                        <Percent className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={formData.trackingDrawDown}
+                          onChange={(e) => setFormData({ ...formData, trackingDrawDown: parseFloat(e.target.value) })}
+                          className="w-full pl-12 pr-4 py-3 text-foreground bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                          min="0"
+                          max="100"
+                          required
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">Maximum allowed drawdown percentage for tracking periods</p>
                     </div>
                   </div>
 
@@ -1036,6 +1063,14 @@ export default function TradingSettingsAdmin() {
                           <span className="text-xs font-semibold text-orange-600 uppercase tracking-wide">Check</span>
                         </div>
                         <p className="text-lg font-bold text-gray-900">{settings.closeAllCheckPeriod}d</p>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-red-50 to-rose-50 rounded-xl p-4 border border-red-100">
+                        <div className="flex items-center gap-2 mb-2">
+                          <TrendingDown className="w-4 h-4 text-red-600" />
+                          <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">Drawdown</span>
+                        </div>
+                        <p className="text-lg font-bold text-gray-900">{settings.trackingDrawDown}%</p>
                       </div>
                     </div>
 
